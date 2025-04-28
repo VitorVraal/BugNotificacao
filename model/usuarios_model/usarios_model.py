@@ -22,32 +22,73 @@ def criar_tabela():
     db.commit()
     db.close()
 
-def listar_usarios():
-    try: 
-        db = conectar()
-        cursor = db.cursor()
-        cursor.execute('SELECT * FROM usuario')
-        usuario = cursor.fetchall()
-        return usuario
-    except Exception as e:
-        print(f'Erro ao listar usuários: {e}')
-        return []
-    finally:
-        if db.is_connected():
-            db.close()
-
-def buscar_usuario_por_email(email_usuario):
+def cadastrar_usuario(NOME_USUARIO, EMAIL_USUARIO, SENHA_USUARIO, TIPO_CONTA):
     try:
         db = conectar()
-        cursor = db.cursor(dictionary=True)
-        cursor.execute('SELECT * FROM usuario WHERE email_usuario = %s', (email_usuario,))
-        usuario = cursor.fetchone()
-        return usuario
+        cursor = db.cursor()
+        command = "CALL CADASTRAR_USUARIO(%s, %s, %s, %s)"
+        values = (NOME_USUARIO, EMAIL_USUARIO, SENHA_USUARIO, TIPO_CONTA)
+        cursor.execute(command, values)
+        db.commit()
     except Exception as e:
-        print(f"Erro ao buscra usuário por email: {e}")
-        return None
+        print(f"Erro ao cadastrar usuário: {e}")
     finally:
         if db.is_connected():
             db.close()
 
-def criar_usuario
+def excluir_usuario_id(ID_USUARIO):
+    try:
+        db = conectar()
+        cursor = db.cursor()
+        command = "CALL EXCLUIR_USUARIO_ID(%s)"
+        values = (ID_USUARIO,)
+        cursor.execute(command, values)
+        db.commit()
+    except Exception as e:
+        print(f"Erro ao excluir usuário: {e}")
+    finally:
+        if db.is_connected():
+            db.close()
+
+def alterar_usuario(ID_USUARIO, NOME_USUARIO, EMAIL_USUARIO, SENHA_USUARIO):
+    try:
+        db = conectar()
+        cursor = db.cursor()
+        command = "CALL ALTERAR_USUARIO(%s, %s, %s, %s)"
+        values = (ID_USUARIO, NOME_USUARIO, EMAIL_USUARIO, SENHA_USUARIO)
+        cursor.execute(command, values)
+        db.commit()
+    except Exception as e:
+        print(f"Erro ao alterar usuário: {e}")
+    finally:
+        if db.is_connected():
+            db.close()
+
+def listar_usarios():
+    try:
+        db = conectar()
+        cursor = db.cursor()
+        command = "CALL LISTAR_USUARIOS()"
+        values = ()
+        cursor.execute(command, values)
+        db.commit()
+    except Exception as e:
+        print(f"Erro ao listar usuários: {e}")
+    finally:
+        if db.is_connected():
+            db.close()
+
+def fazer_login(EMAIL_USUARIO, SENHA_USUARIO):
+    try:
+        db = conectar()
+        cursor = db.cursor()
+        command = "CALL FAZER_LOGIN(%s, %s)"
+        values = (EMAIL_USUARIO, SENHA_USUARIO)
+        cursor.execute(command, values)
+        result = cursor.fetchone()
+        return result
+    except Exception as e:
+        print(f"Erro ao fazer login: {e}")
+    finally:
+        if db.is_connected():
+            db.close()
