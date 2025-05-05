@@ -236,121 +236,23 @@ VALUES ('Maria Souza', 'maria@email.com', SHA2('senha123', 256), 1);
 
 	#PROCEDURES DA TABELA ESTOQUE. JUNTEI COM OUTRA FUNÇÃO DE PRODUTOS: ALTERAR ESTOQUE MANUAL
     
-	#CADASTRAR PRODUTO
-DELIMITER //
-
-CREATE PROCEDURE CADASTRAR_PRODUTO_ESTOQUE(
-    IN P_TIPO_ESTOQUE VARCHAR(255),
-    IN P_NOME_PRODUTO VARCHAR(255),
-    IN P_PRECO_PRODUTO FLOAT,
-    IN P_DESC_PRODUTO VARCHAR(255),
-    IN P_QTDE_ESTOQUE_PRODUTO INT
-)
-BEGIN
-    DECLARE estoque_id INT;
-    DECLARE produto_id INT;
-    DECLARE produto_estoque_id INT;
-
-    -- Tenta encontrar um estoque existente pelo tipo
-    SELECT ID_ESTOQUE INTO estoque_id
-    FROM ESTOQUE
-    WHERE TIPO_ESTOQUE = P_TIPO_ESTOQUE;
-
-    IF estoque_id IS NOT NULL THEN
-        -- Estoque existe, tenta encontrar o produto
-        SELECT ID_PRODUTO INTO produto_id
-        FROM PRODUTO
-        WHERE NOME_PRODUTO = P_NOME_PRODUTO;
-
-        IF produto_id IS NOT NULL THEN
-            -- Produto existe, verifica se já está no estoque
-            SELECT ID_ESTOQUE_PRODUTO INTO produto_estoque_id
-            FROM ESTOQUE_PRODUTO
-            WHERE FK_ID_ESTOQUE = estoque_id AND FK_ID_PRODUTO = produto_id;
-
-            IF produto_estoque_id IS NOT NULL THEN
-                -- Produto já está no estoque, atualiza a quantidade
-                UPDATE ESTOQUE_PRODUTO
-                SET QTDE = QTDE + P_QTDE_ESTOQUE_PRODUTO
-                WHERE ID_ESTOQUE_PRODUTO = produto_estoque_id;
-            ELSE
-                -- Produto não está no estoque, adiciona
-                INSERT INTO ESTOQUE_PRODUTO(FK_ID_ESTOQUE, FK_ID_PRODUTO, QTDE)
-                VALUES(estoque_id, produto_id, P_QTDE_ESTOQUE_PRODUTO);
-            END IF;
-        ELSE
-            -- Produto não existe, cadastra e adiciona ao estoque
-            INSERT INTO PRODUTO(NOME_PRODUTO, PRECO_PRODUTO, FK_ID_ESTOQUE_PRODUTO, DESC_PRODUTO)
-            VALUES (P_NOME_PRODUTO, P_PRECO_PRODUTO, estoque_id, P_DESC_PRODUTO);
-            SET produto_id = LAST_INSERT_ID();
-
-            INSERT INTO ESTOQUE_PRODUTO(FK_ID_ESTOQUE, FK_ID_PRODUTO, QTDE)
-            VALUES(estoque_id, produto_id, P_QTDE_ESTOQUE_PRODUTO);
-        END IF;
-
-        -- Adiciona o produto à lista JSON do estoque se não existir (pelo nome)
-        IF NOT EXISTS (
-            SELECT 1
-            FROM ESTOQUE
-            WHERE ID_ESTOQUE = estoque_id
-              AND JSON_CONTAINS(LISTAPRODUTOS, JSON_QUOTE(P_NOME_PRODUTO), '$')
-        ) THEN
-            UPDATE ESTOQUE
-            SET LISTAPRODUTOS = JSON_ARRAY_APPEND(LISTAPRODUTOS, '$', JSON_QUOTE(P_NOME_PRODUTO))
-            WHERE ID_ESTOQUE = estoque_id;
-        END IF;
-
-    ELSE
-        -- Cria o novo estoque
-        INSERT INTO ESTOQUE(TIPO_ESTOQUE, LISTAPRODUTOS)
-        VALUES (P_TIPO_ESTOQUE, JSON_ARRAY(JSON_QUOTE(P_NOME_PRODUTO)));
-
-        SET estoque_id = LAST_INSERT_ID(); 
-        
-        -- Cadastra o produto
-        INSERT INTO PRODUTO(NOME_PRODUTO, PRECO_PRODUTO, FK_ESTOQUE_PRODUTO, DESC_PRODUTO)
-        VALUES (P_NOME_PRODUTO, P_PRECO_PRODUTO, estoque_id, P_DESC_PRODUTO);
-        SET produto_id = LAST_INSERT_ID();
-
-        -- Insere na tabela de relacionamento ESTOQUE_PRODUTO
-        INSERT INTO ESTOQUE_PRODUTO(FK_ID_ESTOQUE, FK_ID_PRODUTO, QTDE)
-        VALUES(estoque_id, produto_id, P_QTDE_ESTOQUE_PRODUTO);
-    END IF;
-END //
-DELIMITER ;
-DROP PROCEDURE CADASTRAR_PRODUTO_ESTOQUE;
-
-#EXPLICAÇÃO "LAST_INSERT_ID()" Obtém o ID gerado para o novo estoque
-#TESTE
-CALL CADASTRAR_PRODUTO_ESTOQUE('Papelaria', 'Lápis', 1.50, 'Lápis HB', 10);
-CALL CADASTRAR_PRODUTO_ESTOQUE('GAMER', 'MAUSE', 10.50, 'MAUSE DA RAZE', 100);
-
-CALL CADASTRAR_PRODUTO_ESTOQUE(
-'FRUTA', -- P_TIPO_ESTOQUE VARCHAR(255),
-'MELANCIA', -- IN P_NOME_PRODUTO VARCHAR(255),
-0.50, -- IN P_PRECO_PRODUTO FLOAT,
-'MELANCIA FRESCA', -- P_DESC_PRODUTO VARCHAR(255),
-100 -- P_QTDE_ESTOQUE_PRODUTO INT
-);
-
-SELECT *FROM PRODUTO;
-SELECT *FROM ESTOQUE;
-SELECT *FROM ESTOQUE_PRODUTO;
 
 
+    -- REMOVER PRODUTO
 DELIMITER //
 CREATE PROCEDURE REMOVER_PRODUTO_ID(
     IN P_ID_ESTOQUE INT
 )
 BEGIN
     START TRANSACTION;
-	DELETE FROM PRODUTO WHERE FK_ESTOQUE_PRODUTO = P_ID_ESTOQUE;
-	DELETE FROM ESTOQUE WHERE ID_ESTOQUE = P_ID_ESTOQUE; 
+	DELETE FROM PRODUTO WHERE FK_ESTOQUE = P_ID_ESTOQUE;
 	COMMIT;
 END //
 DELIMITER ;
 CALL REMOVER_PRODUTO_ID(1);
 
+
+    -- PROCURAR PRODUTO
 DELIMITER //
 CREATE PROCEDURE PROCURAR_PRODUTO_ID(
 	IN P_ID_PRODUTO INT
@@ -364,7 +266,7 @@ BEGIN
 			p.DESC_PRODUTO,
 			e.ID_ESTOQUE,
 			e.TIPO_ESTOQUE
-		FROM PRODUTO p JOIN ESTOQUE e ON p.FK_ID_ESTOQUE_PRODUTO = e.ID_ESTOQUE WHERE p.ID_PRODUTO = P_ID_PRODUTO;
+		FROM PRODUTO p JOIN ESTOQUE e ON p.FK_ID_ESTOQUE = e.ID_ESTOQUE WHERE p.ID_PRODUTO = P_ID_PRODUTO;
     ELSE
 		SIGNAL SQLSTATE '45000'
 		SET MESSAGE_TEXT = 'Erro: Estoque não encontrado.';
@@ -372,35 +274,10 @@ BEGIN
 END //
 DELIMITER ;
 
-#TESTE
 call PROCURAR_PRODUTO_ID(1);
 
 
-DELIMITER //
-CREATE PROCEDURE NOTIFICACAO_FALTA_PRODUTO(
-	IN P_ID_PRODUTO INT,
-    IN P_QTDE_MIN int,
-	OUT P_NOTIFICACAO VARCHAR(255) -- pra retornar a mensagem
-)
-BEGIN
-    declare atual_qtde int ;
-	SELECT QTDE INTO atual_qtde
-    FROM ESTOQUE_PRODUTO
-    WHERE FK_ID_PRODUTO = P_ID_PRODUTO LIMIT 1; #Considero que só vai haver uma verificação por produto, certo?
-    
-    IF atual_qtde IS NULL THEN
-        SET P_NOTIFICACAO = CONCAT('AVISO: Produto com ID ', P_ID_PRODUTO, ' não encontrado no estoque.');
-    ELSEIF atual_qtde <= P_QTDE_MIN THEN
-        SET P_NOTIFICACAO = CONCAT('ALERTA: Quantidade baixa do produto ', P_ID_PRODUTO, '. Quantidade atual: ', atual_qtde, ', Mínimo: ', P_QTDE_MIN, '.');
-    ELSE
-        SET P_NOTIFICACAO = CONCAT('OK: Quantidade do produto ', P_ID_PRODUTO, ' está acima do mínimo (', P_QTDE_MIN, '). Quantidade atual: ', atual_qtde, '.');
-    END IF;
-END //
-DELIMITER ;
 
-#SELECT *FROM ESTOQUE_PRODUTO WHERE QTDE <=100;
-CALL NOTIFICACAO_FALTA_PRODUTO(7, 10, @notificacao);
-SELECT @notificacao;
 
 # CONSULTAR HISTORICO
 
@@ -525,3 +402,39 @@ BEGIN
     END IF;
 END //
 DELIMITER ;
+
+
+    --- PROCEDURES PARA FAZER
+
+	#CADASTRAR PRODUTO
+DELIMITER //
+
+CREATE PROCEDURE CADASTRAR_PRODUTO_ESTOQUE(
+)
+BEGIN
+
+END //
+DELIMITER ;
+
+
+    # NOTIFICAÇÃO DE FALTA DE PRODUTO
+DELIMITER //
+CREATE PROCEDURE NOTIFICACAO_FALTA_PRODUTO(
+
+)
+BEGIN
+END //
+DELIMITER ;
+
+    #ATUALIZAR PRODUTO
+
+DELIMITER //
+CREATE PROCEDURE ATUALIZAR_PRODUTO(
+
+)
+BEGIN
+END //
+DELIMITER ;
+
+
+
