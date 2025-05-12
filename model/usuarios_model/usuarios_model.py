@@ -66,16 +66,16 @@ def listar_usuarios():
 
 def fazer_login(EMAIL_USUARIO, SENHA_USUARIO):
     try:
+        print("EMAIL_USUARIO:", EMAIL_USUARIO)
+        print("SENHA_USUARIO:", SENHA_USUARIO)
         db = conectar()
         cursor = db.cursor(dictionary=True)
         cursor.execute("CALL FAZER_LOGIN(%s, %s)", (EMAIL_USUARIO, SENHA_USUARIO))
         result = cursor.fetchone()
-        if result:
-            return {"message": "Login bem-sucedido.", "user": result}
-        else:
-            return {"error": "Credenciais inválidas."}
+        return {"message": "Login bem-sucedido.", "user": result}
     except Exception as e:
         return {"error": f"Erro ao fazer login: {e}"}
     finally:
         if db.is_connected():
             db.close()
+
