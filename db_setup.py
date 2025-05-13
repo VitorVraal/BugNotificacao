@@ -22,6 +22,8 @@ def criar_tabelas():
         connection = mysql.connector.connect(host='localhost', user='root', password='', database='db')
         cursor = connection.cursor()
 
+        #CRIAÇÃO DE TABELAS
+
         # Tabela de usuários
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS USUARIO(
@@ -36,8 +38,27 @@ def criar_tabelas():
             CONSTRAINT CHK_TIPO_CONTA CHECK (TIPO_CONTA IN (1, 2, 3))
         );
         ''')
-
-        # ADICIONAR OUTRAS TABELAS AQUI
+        
+        # Tabela de estoque
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS ESTOQUE(
+	    ID_ESTOQUE INT AUTO_INCREMENT PRIMARY KEY,
+    	TIPO_ESTOQUE VARCHAR(255) NOT NULL UNIQUE,
+	    QTDE_ESTOQUE INT
+        );
+        ''')
+        
+        #Tabela de produtos
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS PRODUTO(
+	    ID_PRODUTO INT AUTO_INCREMENT PRIMARY key,
+        NOME_PRODUTO VARCHAR(255) NOT NULL UNIQUE,
+        PRECO_PRODUTO FLOAT NOT NULL,
+        FK_ID_ESTOQUE INT DEFAULT NULL,
+	    DESC_PRODUTO VARCHAR(255) NULL,
+        FOREIGN KEY (FK_ID_ESTOQUE) REFERENCES ESTOQUE(ID_ESTOQUE) ON DELETE SET NULL
+        );               
+       ''')
 
         # Procedure de cadastrar usuário
         cursor.execute('''
@@ -97,6 +118,8 @@ def criar_tabelas():
         END
         ''')        
         
+        #CRIAÇÃO DE PROCEDURES
+        
         # Procedure de listar usuários
         cursor.execute('''
         CREATE PROCEDURE LISTAR_USUARIOS()
@@ -111,20 +134,26 @@ def criar_tabelas():
         CREATE PROCEDURE FAZER_LOGIN(
 	    IN P_EMAIL_USUARIO VARCHAR(255),
 	    IN P_SENHA_USUARIO VARCHAR(255)
-        )
+        ) 
         BEGIN
-	    declare T_MENSAGEM VARCHAR(255);
-	    IF EXISTS (SELECT 1 FROM USUARIO WHERE EMAIL_USUARIO = P_EMAIL_USUARIO AND SENHA_USUARIO = SHA2(P_SENHA_USUARIO, 256)
-        ) THEN
-        SELECT ID_USUARIO, NOME_USUARIO, EMAIL_USUARIO, TIPO_CONTA 
+        IF EXISTS (
+        SELECT 1 FROM USUARIO 
+        WHERE EMAIL_USUARIO = P_EMAIL_USUARIO 
+        AND SENHA_USUARIO = P_SENHA_USUARIO)  
+        THEN
+        SELECT
+        ID_USUARIO,
+        NOME_USUARIO,
+        EMAIL_USUARIO,
+        TIPO_CONTA,
+        'Login realizado com sucesso!' AS MENSAGEM
         FROM USUARIO
         WHERE EMAIL_USUARIO = P_EMAIL_USUARIO;
-		SET T_MENSAGEM =  'LOGIN FEITO COM SUCESSO';
         ELSE
         SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Erro: E-mail ou senha inválidos.';
+        SET MESSAGE_TEXT = 'Erro: Email ou senha inválidos.';
         END IF;
-        END 
+        END
         ''')
 
         # ADICIONAR OUTRAS PROCEDURES AQUI
