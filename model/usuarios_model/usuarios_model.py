@@ -70,12 +70,24 @@ def fazer_login(EMAIL_USUARIO, SENHA_USUARIO):
         cursor = db.cursor(dictionary=True)
         cursor.execute("CALL FAZER_LOGIN(%s, %s)", (EMAIL_USUARIO, SENHA_USUARIO))
         result = cursor.fetchone()
-        if result:
-            return {"message": "Login bem-sucedido.", "user": result}
+        
+        if result and result.get("MENSAGEM") == "LOGIN FEITO COM SUCESSO":
+            return {
+                "message": result["MENSAGEM"],
+                "user": {
+                    "id": result["ID_USUARIO"],
+                    "nome": result["NOME_USUARIO"],
+                    "email": result["EMAIL_USUARIO"],
+                    "tipo_conta": result["TIPO_CONTA"]
+                }
+            }
         else:
             return {"error": "Credenciais inválidas."}
+
     except Exception as e:
         return {"error": f"Erro ao fazer login: {e}"}
     finally:
         if db.is_connected():
             db.close()
+
+
