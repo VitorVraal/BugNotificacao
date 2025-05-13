@@ -134,21 +134,25 @@ def criar_tabelas():
         CREATE PROCEDURE FAZER_LOGIN(
 	    IN P_EMAIL_USUARIO VARCHAR(255),
 	    IN P_SENHA_USUARIO VARCHAR(255)
-        )
+        ) 
         BEGIN
-	    IF EXISTS (
-		SELECT 1 
-		FROM USUARIO 
-		WHERE EMAIL_USUARIO = P_EMAIL_USUARIO 
-		  AND SENHA_USUARIO = P_SENHA_USUARIO
-	    ) THEN
-		SELECT ID_USUARIO, NOME_USUARIO, EMAIL_USUARIO, TIPO_CONTA 
-		FROM USUARIO
-		WHERE EMAIL_USUARIO = P_EMAIL_USUARIO;
-	    ELSE
-		SIGNAL SQLSTATE '45000'
-		SET MESSAGE_TEXT = 'Erro: E-mail ou senha inválidos.';
-	    END IF;
+        IF EXISTS (
+        SELECT 1 FROM USUARIO 
+        WHERE EMAIL_USUARIO = P_EMAIL_USUARIO 
+        AND SENHA_USUARIO = P_SENHA_USUARIO)  
+        THEN
+        SELECT
+        ID_USUARIO,
+        NOME_USUARIO,
+        EMAIL_USUARIO,
+        TIPO_CONTA,
+        'Login realizado com sucesso!' AS MENSAGEM
+        FROM USUARIO
+        WHERE EMAIL_USUARIO = P_EMAIL_USUARIO;
+        ELSE
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Erro: Email ou senha inválidos.';
+        END IF;
         END
         ''')
 
