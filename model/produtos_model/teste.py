@@ -1,6 +1,6 @@
-from db_mysql import MySqlConnector
-from db_model import DBModel
-from mysql.connector import Error
+from database.db_mysql import MySqlConnector
+from database.db_model import DBModel
+
 
 def main():
     config = DBModel.get_dotenv()

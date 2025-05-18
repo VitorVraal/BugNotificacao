@@ -1,6 +1,7 @@
-from db_model import DataBaseConnector, DBModel
-from mysql.connector import Error, connect, MySQLConnection
+from .db_model import DataBaseConnector, DBModel
 from typing import Optional
+from mysql.connector import Error, connect, MySQLConnection
+
 
 
 class MySqlConnector(DataBaseConnector):
@@ -26,7 +27,3 @@ class MySqlConnector(DataBaseConnector):
         if self.conn and self.conn.is_connected():
             self.conn.close()
             return False, f'Conexão fechada com sucesso'
-
-
-
-    

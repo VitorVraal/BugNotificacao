@@ -3,6 +3,8 @@ from dotenv import load_dotenv
 from pydantic import BaseModel, ValidationError
 from typing import Optional, Protocol
 
+
+
 class DBModel(BaseModel):
     user:str
     password:str
@@ -21,13 +23,13 @@ class DBModel(BaseModel):
 
     @classmethod
     def get_dotenv(cls, dotenv_path: Optional[str] = ".env") -> "DBModel":
-        load_dotenv(dotenv_path)
+        load_dotenv(dotenv_path="database/.env")
         return cls(
             user=os.getenv("user"),
             password=os.getenv("password"),
             host=os.getenv("host"),
             database=os.getenv("database"),
-            port=int(os.getenv("port")),
+            port=int(os.getenv("port", 3306)),
             sid=os.getenv("sid")
         )
 
