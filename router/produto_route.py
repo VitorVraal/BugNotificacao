@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import AbstractSet, Optional, List
 from fastapi import APIRouter, HTTPException
-from controller.produtos_controller.produtos_controller import insert_produto_controller, update_produto_estoque, search_produto_estoque, delete_produto_controller, list_produto_estoque
+from controller.produtos_controller.produtos_controller import insert_produto_controller, update_produto_controller, search_produto_controller, delete_produto_controller, list_produto_estoque
 
 router = APIRouter()
 
@@ -27,6 +27,15 @@ def cadastrar_produto_router(produto: Produto, estoque: Estoque):
         return {"message": "Produto e estoque cadastrados com sucesso!"} # Retorne uma mensagem de sucesso
     except Exception as err:
         raise HTTPException(status_code=400, detail=str(err))
+    
+
+@router.get("/produto/{id}")
+def search_produto_router(id:int):
+    produto_data = search_produto_controller(id)
+    if produto_data:
+        return {"message": "Produto localizado", "data": produto_data}
+    else:
+        return {"message": "Nenhum produto encontrado com essa ID."}
     
 
 
