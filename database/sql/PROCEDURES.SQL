@@ -204,7 +204,6 @@ call PROCURAR_PRODUTO_ID(1);
 DELIMITER //
 CREATE PROCEDURE CONSULTAR_HISTORICO(
     IN P_ID_PRODUTO INT
-    #p_produto_id 
 )
 BEGIN
     SELECT m.*, p.NOME_PRODUTO AS nome_produto
@@ -214,8 +213,8 @@ BEGIN
     ORDER BY m.DATA_MOVIMENTACAO DESC;
 END //
 DELIMITER ;
-#TESTE
 CALL CONSULTAR_HISTORICO(2);
+
 
 	#PROCEDURE GERAR RELATORIO
     
@@ -228,13 +227,13 @@ BEGIN
     SELECT p.ID_PRODUTO, p.NOME_PRODUTO, p.PRECO_PRODUTO, ep.QTDE, 
     (p.PRECO_PRODUTO * ep.QTDE) AS ValorTotal FROM ESTOQUE_PRODUTO ep
     
-    JOIN PRODUTOS p ON ep.FK_ID_PRODUTO = p.ID_PRODUTO
+    JOIN PRODUTO p ON ep.FK_ID_PRODUTO = p.ID_PRODUTO
     WHERE ep.FK_ID_ESTOQUE = p_id_estoque
     ORDER BY p.NOME_PRODUTO;
 END //
 DELIMITER ;
 
-CALL GERAR_RELATORIO_ESTOQUE(1);
+CALL GERAR_RELATORIO_ESTOQUE(2);
 
 
 #PROCEDURE 
@@ -257,9 +256,9 @@ CREATE PROCEDURE REGISTRAR_MOVIMENTO(
     IN p_tipo_movimentacao VARCHAR(255)
 )
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM PRODUTOS WHERE ID_PRODUTO = p_fk_id_produto) THEN
+    IF NOT EXISTS (SELECT 1 FROM PRODUTO WHERE ID_PRODUTO = p_fk_id_produto) THEN
         SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Erro: ID de produto inválido.';
+        SET MESSAGE_TEXT = 'Erro: ID de produto inválido ou produto não associado a um estoque.';
     ELSEIF p_qtde = 0 THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'Erro: A quantidade movimentada não pode ser zero.';
@@ -267,40 +266,47 @@ BEGIN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'Erro: Tipo de movimentação inválido (deve ser "entrada", "saida" ou "ajuste").';
     ELSE
+        -- Insere o registro na tabela MOVIMENTACAO
         INSERT INTO MOVIMENTACAO (FK_ID_PRODUTO, QTDE, TIPO_MOVIMENTACAO, DATA_MOVIMENTACAO)
         VALUES (p_fk_id_produto, p_qtde, p_tipo_movimentacao, CURDATE());
         
+        -- Obtém a quantidade atual do estoque
+        SELECT QTDE_ESTOQUE INTO v_qtde_atual_estoque
+        FROM ESTOQUE
+        WHERE ID_ESTOQUE = v_id_estoque;
+
+        -- Atualiza a quantidade na tabela ESTOQUE
         IF p_tipo_movimentacao = 'entrada' THEN
-            UPDATE ESTOQUE_PRODUTO
-            SET QTDE = QTDE + p_qtde
-            WHERE FK_ID_PRODUTO = p_fk_id_produto;
+            UPDATE ESTOQUE
+            SET QTDE_ESTOQUE = QTDE_ESTOQUE + p_qtde
+            WHERE ID_ESTOQUE = v_id_estoque;
 
         ELSEIF p_tipo_movimentacao = 'saida' THEN
-            UPDATE ESTOQUE_PRODUTO
-            SET QTDE = QTDE - p_qtde
-            WHERE FK_ID_PRODUTO = p_fk_id_produto AND QTDE >= p_qtde;
-            IF ROW_COUNT() = 0 THEN
+            IF v_qtde_atual_estoque < p_qtde THEN
                 SIGNAL SQLSTATE '45000'
                 SET MESSAGE_TEXT = 'Erro: Quantidade insuficiente em estoque para realizar a saída.';
+            ELSE
+                UPDATE ESTOQUE
+                SET QTDE_ESTOQUE = QTDE_ESTOQUE - p_qtde
+                WHERE ID_ESTOQUE = v_id_estoque;
             END IF;
-         ELSEIF p_tipo_movimentacao = 'ajuste' THEN
-            UPDATE ESTOQUE_PRODUTO
-            SET QTDE = QTDE + p_qtde
-			WHERE FK_ID_PRODUTO = p_fk_id_produto;
+        ELSEIF p_tipo_movimentacao = 'ajuste' THEN
+            -- Para ajuste, estamos adicionando a quantidade. Se for um ajuste para baixo, p_qtde deve ser negativo.
+            UPDATE ESTOQUE
+            SET QTDE_ESTOQUE = QTDE_ESTOQUE + p_qtde
+            WHERE ID_ESTOQUE = v_id_estoque;
         END IF;
     END IF;
 END //
 DELIMITER ;
 
-	-- IN p_fk_id_produto INT,
-    -- IN p_qtde INT,
-     -- IN p_tipo_movimentacao VARCHAR(255)
-    
 CALL REGISTRAR_MOVIMENTO(
 2, -- p_fk_id_produto
 3, -- p_qtde
-'saida' -- p_tipo_movimentacao
+'entrada' -- p_tipo_movimentacao
 );
+
+
 SELECT *FROM PRODUTO;
 SELECT *FROM ESTOQUE_PRODUTO;
 SELECT *FROM ESTOQUE;
