@@ -28,14 +28,11 @@ def criar_tabelas():
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS USUARIO(
             ID_USUARIO INT AUTO_INCREMENT PRIMARY KEY NOT NULL,
-            NOME_USUARIO VARCHAR(255),
             EMAIL_USUARIO VARCHAR(255) NOT NULL UNIQUE,
             SENHA_USUARIO VARCHAR(255) NOT NULL,
-            TIPO_CONTA INT,
             DATA_CADASTRO DATE DEFAULT NULL,
             DATA_ATUALIZACAO DATE DEFAULT NULL,
-            CONSTRAINT CHK_SENHA_TAMANHO CHECK (LENGTH(SENHA_USUARIO) >= 3),
-            CONSTRAINT CHK_TIPO_CONTA CHECK (TIPO_CONTA IN (1, 2, 3))
+            CONSTRAINT CHK_SENHA_TAMANHO CHECK (LENGTH(SENHA_USUARIO) >= 3)
         );
         ''')
         
@@ -88,14 +85,12 @@ def criar_tabelas():
         # Procedure de cadastrar usuário
         cursor.execute('''
         CREATE PROCEDURE CADASTRAR_USUARIO(
-        IN P_NOME_USUARIO VARCHAR(100),
         IN P_EMAIL_USUARIO VARCHAR(100),
-        IN P_SENHA_USUARIO VARCHAR(100),
-        IN P_TIPO_CONTA INT
+        IN P_SENHA_USUARIO VARCHAR(100)
         )
         BEGIN
-        INSERT INTO USUARIO (NOME_USUARIO, EMAIL_USUARIO, SENHA_USUARIO, TIPO_CONTA)
-        VALUES (P_NOME_USUARIO, P_EMAIL_USUARIO, P_SENHA_USUARIO, P_TIPO_CONTA);
+        INSERT INTO USUARIO (EMAIL_USUARIO, SENHA_USUARIO)
+        VALUES (P_EMAIL_USUARIO, P_SENHA_USUARIO);
         END
         ''')
         
@@ -118,7 +113,6 @@ def criar_tabelas():
         cursor.execute('''
         CREATE PROCEDURE alterar_usuario(
         IN P_ID_USUARIO INT,
-        IN P_NOME_USUARIO VARCHAR(255),
         IN P_EMAIL_USUARIO VARCHAR(255),
         IN P_SENHA_USUARIO VARCHAR(255)
         )
@@ -133,8 +127,7 @@ def criar_tabelas():
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'Erro: O email informado já está cadastrado para outro usuário.';
         ELSE
-        UPDATE USUARIO
-        SET NOME_USUARIO = P_NOME_USUARIO,
+        UPDATE USUARIO SET
         EMAIL_USUARIO = P_EMAIL_USUARIO,
         SENHA_USUARIO = P_SENHA_USUARIO
         WHERE ID_USUARIO = P_ID_USUARIO;
@@ -276,9 +269,7 @@ def criar_tabelas():
         THEN
         SELECT
         ID_USUARIO,
-        NOME_USUARIO,
         EMAIL_USUARIO,
-        TIPO_CONTA,
         'Login realizado com sucesso!' AS MENSAGEM
         FROM USUARIO
         WHERE EMAIL_USUARIO = P_EMAIL_USUARIO;

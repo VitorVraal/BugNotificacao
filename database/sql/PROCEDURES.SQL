@@ -6,20 +6,15 @@
 DELIMITER //
 
 CREATE PROCEDURE CADASTRAR_USUARIO(
-    IN P_NOME_USUARIO VARCHAR(100),
     IN P_EMAIL_USUARIO VARCHAR(100),
-    IN P_SENHA_USUARIO VARCHAR(100),
-    IN P_TIPO_CONTA INT
+    IN P_SENHA_USUARIO VARCHAR(100)
 )
 BEGIN
-    INSERT INTO USUARIO (NOME_USUARIO, EMAIL_USUARIO, SENHA_USUARIO, TIPO_CONTA)
-    VALUES (P_NOME_USUARIO, P_EMAIL_USUARIO, P_SENHA_USUARIO, P_TIPO_CONTA);
+    INSERT INTO USUARIO (EMAIL_USUARIO, SENHA_USUARIO)
+    VALUES (P_EMAIL_USUARIO, P_SENHA_USUARIO);
 END //
 
 DELIMITER ;
-
-#TESTE
-CALL CADASTRAR_USUARIO('João da Silva', 'joao12@email.com', 'senha123', 1);
 
 
 	#EXCLUIR USUARIO
@@ -45,8 +40,7 @@ CALL EXCLUIR_USUARIO_ID(3);
 	#ALTERAR USUARIO
 DELIMITER //
 CREATE PROCEDURE alterar_usuario(
-    IN P_ID_USUARIO INT,
-    IN P_NOME_USUARIO VARCHAR(255),
+    IN P_ID_USUARIO INT
     IN P_EMAIL_USUARIO VARCHAR(255),
     IN P_SENHA_USUARIO VARCHAR(255)
 )
@@ -62,16 +56,13 @@ BEGIN
             SET MESSAGE_TEXT = 'Erro: O email informado já está cadastrado para outro usuário.';
         ELSE
             UPDATE USUARIO
-            SET NOME_USUARIO = P_NOME_USUARIO,
-                EMAIL_USUARIO = P_EMAIL_USUARIO,
+            SET EMAIL_USUARIO = P_EMAIL_USUARIO,
                 SENHA_USUARIO = P_SENHA_USUARIO
             WHERE ID_USUARIO = P_ID_USUARIO;
         END IF;
     END IF;
 END //
 DELIMITER ;
-CALL alterar_usuario(1, 'Novo Nome Teste 1', 'novo1@email.com', 'novasenha');
-call alterar_usuario(1, "Jhon deyvid Quispe Mamani", "jhonis@gmail.com", "password", now());
 
 	#LISTAR USUARIO
 DELIMITER //
@@ -104,29 +95,19 @@ BEGIN
     ) THEN
         SELECT
             ID_USUARIO,
-            NOME_USUARIO,
             EMAIL_USUARIO,
-            TIPO_CONTA,
             'Login realizado com sucesso!' AS MENSAGEM
         FROM USUARIO
         WHERE EMAIL_USUARIO = P_EMAIL_USUARIO;
     ELSE
-        SELECT NULL AS ID_USUARIO,
-               NULL AS NOME_USUARIO,
+        SELECT NULL AS ID_USUARIO
                NULL AS EMAIL_USUARIO,
-               NULL AS TIPO_CONTA,
                'Credenciais inválidas.' AS MENSAGEM;
     END IF;
 END //
 
 DELIMITER ;
 
-
-DELIMITER ;
-
-	#TESTE
-INSERT INTO USUARIO (NOME_USUARIO, EMAIL_USUARIO, SENHA_USUARIO, TIPO_CONTA)
-VALUES ('Maria Souza', 'maria@email.com', SHA2('senha123', 256), 1);
 
 	#PROCEDURES DA TABELA ESTOQUE. JUNTEI COM OUTRA FUNÇÃO DE PRODUTOS: ALTERAR ESTOQUE MANUAL
     
