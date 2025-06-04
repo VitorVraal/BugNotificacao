@@ -21,9 +21,6 @@ def delete_produto_controller(id_produto: int):
 def update_produto_controller(NOME_PRODUTO, PRECO_PRODUTO, DESC_PRODUTO, TIPO_ESTOQUE, QTDE_ESTOQUE, TIPO_ATUALIZACAO):
     validation, _ = PROCURAR_PRODUTO_ID(NOME_PRODUTO)
     
-    if not validation:
-        return {"erro": "Produto não encontrado para atualização."}
-    
     return ATUALIZAR_PRODUTO(NOME_PRODUTO, PRECO_PRODUTO, DESC_PRODUTO, TIPO_ESTOQUE, QTDE_ESTOQUE, TIPO_ATUALIZACAO)
 
 
