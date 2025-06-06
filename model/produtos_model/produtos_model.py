@@ -1,18 +1,19 @@
-import mysql.connector
+from database.db_mysql import MySqlConnector
+from database.db_model import DBModel
 from mysql.connector import Error
-
-def conectar():
-    return mysql.connector.connect(host='localhost', user='root', password='', database='db')
+from pydantic import BaseModel, ValidationError
+from typing import Optional, Protocol
 
 def CADASTRAR_PRODUTO_ESTOQUE(NOME_PRODUTO, PRECO_PRODUTO, DESC_PRODUTO, TIPO_PRODUTO, QTDE_ESTOQUE):
-    db = conectar()
-
+    config = DBModel.get_dotenv()
+    db = MySqlConnector(config)
+    conn, msg = db.connection()
     try:
-        cursor = db.cursor()
+        cursor = conn.cursor()
         command = "CALL CADASTRAR_PRODUTO_ESTOQUE(%s, %s, %s, %s, %s)"
         values = (NOME_PRODUTO, PRECO_PRODUTO, DESC_PRODUTO, TIPO_PRODUTO, QTDE_ESTOQUE)
         cursor.execute(command, values)
-        db.commit()
+        conn.commit()
         return True, 'sucesso'
     except Exception as e:
         print(f"Erro ao inserir produto: {e}")
@@ -21,14 +22,16 @@ def CADASTRAR_PRODUTO_ESTOQUE(NOME_PRODUTO, PRECO_PRODUTO, DESC_PRODUTO, TIPO_PR
         if cursor:
             cursor.close()
         if db:
-            db.close()
+            conn.close()
+
 
 def LISTAR_PRODUTOS():
+    config = DBModel.get_dotenv()
+    db = MySqlConnector(config)
+    conn, msg = db.connection()
     try:
-        conn = conectar()
         cursor = conn.cursor(dictionary=True)
-        cursor.callproc("LISTAR_PRODUTOS")
-        
+        cursor.callproc("LISTAR_PRODUTOS")   
         produtos = []
         for result in cursor.stored_results():
             produtos.extend(result.fetchall())
@@ -36,16 +39,16 @@ def LISTAR_PRODUTOS():
         cursor.close()
         conn.close()
         return produtos
-    except mysql.connector.Error as error:
+    except Error as error:
         return []
 
 
-
 def PROCURAR_PRODUTO_ID(ID_PRODUTO):
-    db = conectar()
-
+    config = DBModel.get_dotenv()
+    db = MySqlConnector(config)
+    conn, msg = db.connection()
     try:
-        cursor = db.cursor()
+        cursor = conn.cursor()
         command = "CALL PROCURAR_PRODUTO_ID(%s)"
         values = (ID_PRODUTO,)
         cursor.execute(command, values)
@@ -57,19 +60,20 @@ def PROCURAR_PRODUTO_ID(ID_PRODUTO):
         if cursor:
             cursor.close()
         if db:
-            db.close()
+            conn.close()
+
 
 def ATUALIZAR_PRODUTO(NOME_PRODUTO, PRECO_PRODUTO, DESC_PRODUTO, TIPO_ESTOQUE, QTDE_ESTOQUE, TIPO_ATUALIZACAO):
-    db = conectar()
-
+    config = DBModel.get_dotenv()
+    db = MySqlConnector(config)
+    conn, msg = db.connection()
     try:
-        cursor = db.cursor()
+        cursor = conn.cursor()
         command = "CALL ATUALIZAR_PRODUTO(%s, %s, %s, %s, %s, %s)"
         values = (NOME_PRODUTO, PRECO_PRODUTO, DESC_PRODUTO, TIPO_ESTOQUE, QTDE_ESTOQUE, TIPO_ATUALIZACAO)
         cursor.execute(command, values)
-        db.commit()
+        conn.commit()
         return True, 'sucesso'
-
     except Exception as e:
         print(f"Erro ao atualizar produto: {e}")
         return False, 'fracassado'
@@ -78,18 +82,22 @@ def ATUALIZAR_PRODUTO(NOME_PRODUTO, PRECO_PRODUTO, DESC_PRODUTO, TIPO_ESTOQUE, Q
         if cursor:
             cursor.fetchall()
             cursor.close()
-        if db:
-            db.close()
+        if conn:
+            conn.close()
+
+print(ATUALIZAR_PRODUTO('maça', 1000, 'UPDATE_TESTE', 'maça', 2000, 2))
+
 
 def EXCLUIR_PRODUTO_GERAL(ID_PRODUTO):
-    db = conectar()
-
+    config = DBModel.get_dotenv()
+    db = MySqlConnector(config)
+    conn, msg = db.connection()
     try:
-        cursor = db.cursor()
+        cursor = conn.cursor()
         command = "CALL EXCLUIR_PRODUTO_GERAL(%s)"
         values = (ID_PRODUTO,)
         cursor.execute(command, values)
-        db.commit()
+        conn.commit()
         print(f"Produto '{ID_PRODUTO}' excluído com sucesso")
         return True, 'produto excluído'
     
@@ -101,5 +109,12 @@ def EXCLUIR_PRODUTO_GERAL(ID_PRODUTO):
         if cursor:
             cursor.close()
         if db:
-            db.close()
+            conn.close()
+
+
+
+def coleta_de_dados_pdf():
+    return
+
+
 
