@@ -4,7 +4,7 @@ import mysql.connector
 from mysql.connector import Error
 
 def conectar():
-    return mysql.connector.connect(host='localhost', user='root', password='', database='db')
+    return mysql.connector.connect(host='localhost', user='root', password='962266514', database='db')
 
 def cadastrar_usuario(EMAIL_USUARIO, SENHA_USUARIO):
     try:

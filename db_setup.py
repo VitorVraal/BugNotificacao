@@ -5,7 +5,7 @@ from mysql.connector import Error
 
 def criar_banco_de_dados():
     try:
-        connection = mysql.connector.connect(host='localhost', user='root', password='')
+        connection = mysql.connector.connect(host='localhost', user='root', password='962266514')
 
         cursor = connection.cursor()
         cursor.execute("CREATE DATABASE IF NOT EXISTS db")
@@ -19,7 +19,7 @@ def criar_banco_de_dados():
 
 def criar_tabelas():
     try:
-        connection = mysql.connector.connect(host='localhost', user='root', password='', database='db')
+        connection = mysql.connector.connect(host='localhost', user='root', password='962266514', database='db')
         cursor = connection.cursor()
 
         #CRIAÇÃO DE TABELAS
@@ -197,53 +197,53 @@ def criar_tabelas():
         #procedure de atualizar produto
         cursor.execute('''
         CREATE PROCEDURE ATUALIZAR_PRODUTO(
-	    IN P_NOME_PRODUTO VARCHAR(255),
-        IN P_PRECO_PRODUTO FLOAT,
-        IN P_DESC_PRODUTO VARCHAR(255),
-        IN P_TIPO_ESTOQUE VARCHAR(255),
-	    IN P_QTDE_ESTOQUE INT,
-        IN TIPO_ATUALIZACAO INT
+            IN P_NOME_PRODUTO VARCHAR(255),
+            IN P_PRECO_PRODUTO FLOAT,
+            IN P_DESC_PRODUTO VARCHAR(255),
+            IN P_TIPO_ESTOQUE VARCHAR(255),
+            IN P_QTDE_ESTOQUE INT,
+            IN TIPO_ATUALIZACAO INT
         )
         BEGIN
-	    DECLARE MSG_RES VARCHAR(50);
-        DECLARE V_ID_ESTOQUE INT;
-	    DECLARE V_ID_PRODUTO INT;
-    
-	    SELECT ID_PRODUTO INTO V_ID_PRODUTO FROM PRODUTOS WHERE NOME_PRODUTO = P_NOME_PRODUTO;
-    
-	    IF V_ID_PRODUTO IS NULL THEN
-		SET MSG_RES = 'PRODUTO NÃO ENCONTRADO';
-	    ELSE 
-		SELECT ID_ESTOQUE INTO V_ID_ESTOQUE FROM ESTOQUE WHERE TIPO_ESTOQUE = P_TIPO_ESTOQUE;
-		IF V_ID_ESTOQUE IS NULL AND TIPO_ATUALIZACAO = 1 THEN
-		SET MSG_RES = 'TIPO DE ESTOQUE NÃO ENCONTRADO';
-		ELSEIF TIPO_ATUALIZACAO = 1 THEN
-		START TRANSACTION;
-		UPDATE ESTOQUE 
-        SET 
-		TIPO_ESTOQUE = P_TIPO_ESTOQUE, 
-		QTDE_ESTOQUE = P_QTDE_ESTOQUE WHERE ID_ESTOQUE = V_ID_ESTOQUE;
-                
-        UPDATE PRODUTOS
-        SET 
-		NOME_PRODUTO = P_NOME_PRODUTO,
-        PRECO_PRODUTO = P_PRECO_PRODUTO,
-        DESC_PRODUTO =  P_DESC_PRODUTO WHERE ID_PRODUTO = V_ID_PRODUTO;
-                
-        SET MSG_RES = 'ALTERAÇÃO FEITA COM SUCESSO NO PRODUTO E SEU ESTOQUE.';
-		COMMIT;
-        ELSEIF TIPO_ATUALIZACAO = 2 THEN
-		UPDATE PRODUTOS SET 
-		NOME_PRODUTO = P_NOME_PRODUTO,
-		PRECO_PRODUTO = P_PRECO_PRODUTO,
-		DESC_PRODUTO =  P_DESC_PRODUTO WHERE ID_PRODUTO = V_ID_PRODUTO;
-	    SET MSG_RES = 'ALTERAÇÃO FEITA COM SUCESSO NO PRODUTO.';
-        COMMIT;
-        ELSE
-		SET MSG_RES = 'OPÇÃO INVALIDA';
-		END IF;
-	    END IF;
-	    SELECT MSG_RES;
+            DECLARE MSG_RES VARCHAR(100);
+            DECLARE V_ID_ESTOQUE INT;
+            DECLARE V_ID_PRODUTO INT;
+            
+            SELECT ID_PRODUTO INTO V_ID_PRODUTO FROM PRODUTOS WHERE NOME_PRODUTO = P_NOME_PRODUTO;
+            
+            IF V_ID_PRODUTO IS NULL THEN
+                SET MSG_RES = 'PRODUTO NÃO ENCONTRADO';
+            ELSE 
+                SELECT ID_ESTOQUE INTO V_ID_ESTOQUE FROM ESTOQUE WHERE TIPO_ESTOQUE = P_TIPO_ESTOQUE;
+                IF V_ID_ESTOQUE IS NULL AND TIPO_ATUALIZACAO = 1 THEN
+                    SET MSG_RES = 'TIPO DE ESTOQUE NÃO ENCONTRADO';
+                ELSEIF TIPO_ATUALIZACAO = 1 THEN
+                    START TRANSACTION;
+                    UPDATE ESTOQUE 
+                    SET 
+                        TIPO_ESTOQUE = P_TIPO_ESTOQUE, 
+                        QTDE_ESTOQUE = P_QTDE_ESTOQUE WHERE ID_ESTOQUE = V_ID_ESTOQUE;
+                        
+                    UPDATE PRODUTOS
+                    SET 
+                        NOME_PRODUTO = P_NOME_PRODUTO,
+                        PRECO_PRODUTO = P_PRECO_PRODUTO,
+                        DESC_PRODUTO =  P_DESC_PRODUTO WHERE ID_PRODUTO = V_ID_PRODUTO;
+                        
+                    SET MSG_RES = 'ALTERAÇÃO FEITA COM SUCESSO NO PRODUTO E SEU ESTOQUE.';
+                    COMMIT;
+                ELSEIF TIPO_ATUALIZACAO = 2 THEN
+                        UPDATE PRODUTOS SET 
+                            NOME_PRODUTO = P_NOME_PRODUTO,
+                            PRECO_PRODUTO = P_PRECO_PRODUTO,
+                            DESC_PRODUTO =  P_DESC_PRODUTO WHERE ID_PRODUTO = V_ID_PRODUTO;
+                    SET MSG_RES = 'ALTERAÇÃO FEITA COM SUCESSO NO PRODUTO.';
+                    COMMIT;
+                ELSE
+                    SET MSG_RES = 'OPÇÃO INVALIDA';
+                END IF;
+            END IF;
+            SELECT MSG_RES;
         END
         ''')
         

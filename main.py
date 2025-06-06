@@ -24,10 +24,8 @@ async def startup():
     # Cria as tabelas e procedures
     criar_tabelas()
 
-# Inclui a router de usuários
+# # Inclui a router de usuários
 app.include_router(usuario_router, tags=["Usuários"])
-
-
 @app.get("/")
 def read_root():
     return {"message": "Bem-vindo à API de Produtos!"}
