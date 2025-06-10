@@ -443,6 +443,7 @@ call NOTIFICACAO_FALTA_PRODUTO('MAÇA', 500, 5000)
 ---    #ATUALIZAR PRODUTO
 
 delimiter //
+
 CREATE PROCEDURE ATUALIZAR_ESTOQUE_PRODUTO(
 -- Parâmetros para ESTOQUE (opcionais)
 IN p_id_estoque_upd INT,
@@ -456,9 +457,9 @@ IN p_preco_produto_upd FLOAT,
 IN p_fk_id_estoque_upd INT,
 IN p_desc_produto_upd VARCHAR(255),
 IN p_numero_nf_produto_upd VARCHAR(255),
-IN p_validade_produto DATE,
-IN p_fornecedor_produto VARCHAR(255),
-IN p_qtd_minima_produto INT
+IN p_validade_produto_upd DATE,
+IN p_fornecedor_produto_upd VARCHAR(255),
+IN p_qtd_minima_produto_upd INT
 )
 BEGIN
 -- Handler de erro para reverter transação em caso de exceção SQL
@@ -488,8 +489,8 @@ SET
     DESC_PRODUTO = COALESCE(p_desc_produto_upd, DESC_PRODUTO),
     NUMERO_NF_PRODUTO = COALESCE(p_numero_nf_produto_upd, NUMERO_NF_PRODUTO),
     VALIDADE_PRODUTO = COALESCE(p_validade_produto_upd, VALIDADE_PRODUTO),
-    FORNECEDOR_PRODUTO = COALESCE(p_fornecedor_produto, FORNECEDOR_PRODUTO),
-    QTD_MINIMA_PRODUTO = COALESCE(p_qtd_minima_produto, QTD_MINIMA_PRODUTO)
+    FORNECEDOR_PRODUTO = COALESCE(p_fornecedor_produto_upd, FORNECEDOR_PRODUTO),
+    QTD_MINIMA_PRODUTO = COALESCE(p_qtd_minima_produto_upd, QTD_MINIMA_PRODUTO)
 WHERE ID_PRODUTO = p_id_produto_upd;
 END IF;
 

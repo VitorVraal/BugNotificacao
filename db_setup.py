@@ -1,4 +1,4 @@
-from database.db_model import DBModel  # Ajuste o caminho se necessário
+from database.db_model import DBModel 
 import mysql.connector
 from mysql.connector import Error
 
@@ -74,7 +74,6 @@ def criar_tabelas():
         VALIDADE_PRODUTO DATE NOT NULL,
         FORNECEDOR_PRODUTO VARCHAR(255) NULL,
         QTD_MINIMA_PRODUTO INT NOT NULL,
-        NUMERO_NF_PRODUTO VARCHAR(255) NOT NULL UNIQUE,
         FOREIGN KEY (FK_ID_ESTOQUE) REFERENCES ESTOQUE(ID_ESTOQUE) ON DELETE SET NULL
         );               
         ''')
@@ -248,9 +247,9 @@ def criar_tabelas():
             IN p_fk_id_estoque_upd INT,
             IN p_desc_produto_upd VARCHAR(255),
             IN p_numero_nf_produto_upd VARCHAR(255),
-            IN p_validade_produto DATE,
-            IN p_fornecedor_produto VARCHAR(255),
-            IN p_qtd_minima_produto INT
+            IN p_validade_produto_upd DATE,
+            IN p_fornecedor_produto_upd VARCHAR(255),
+            IN p_qtd_minima_produto_upd INT
         )
         BEGIN
             -- Handler de erro para reverter transação em caso de exceção SQL
@@ -280,8 +279,8 @@ def criar_tabelas():
                     DESC_PRODUTO = COALESCE(p_desc_produto_upd, DESC_PRODUTO),
                     NUMERO_NF_PRODUTO = COALESCE(p_numero_nf_produto_upd, NUMERO_NF_PRODUTO),
                     VALIDADE_PRODUTO = COALESCE(p_validade_produto_upd, VALIDADE_PRODUTO),
-                    FORNECEDOR_PRODUTO = COALESCE(p_fornecedor_produto, FORNECEDOR_PRODUTO),
-                    QTD_MINIMA_PRODUTO = COALESCE(p_qtd_minima_produto, QTD_MINIMA_PRODUTO)
+                    FORNECEDOR_PRODUTO = COALESCE(p_fornecedor_produto_upd, FORNECEDOR_PRODUTO),
+                    QTD_MINIMA_PRODUTO = COALESCE(p_qtd_minima_produto_upd, QTD_MINIMA_PRODUTO)
                 WHERE ID_PRODUTO = p_id_produto_upd;
             END IF;
 
@@ -292,9 +291,6 @@ def criar_tabelas():
         
         #Procedure de listar produtos
         cursor.execute('''
-        DROP PROCEDURE IF EXISTS LISTAR_PRODUTOS;
-
-        DELIMITER $$
         CREATE PROCEDURE LISTAR_PRODUTOS()
         BEGIN
             SELECT 
@@ -309,8 +305,7 @@ def criar_tabelas():
                 e.QTDE_ESTOQUE
             FROM PRODUTOS p
             LEFT JOIN ESTOQUE e ON e.ID_ESTOQUE = p.FK_ID_ESTOQUE;
-        END$$
-        DELIMITER ;
+        END
         ''')
 
         

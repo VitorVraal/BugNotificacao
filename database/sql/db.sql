@@ -36,7 +36,6 @@ CREATE TABLE IF NOT EXISTS PRODUTOS(
         VALIDADE_PRODUTO DATE NOT NULL,
         FORNECEDOR_PRODUTO VARCHAR(255) NULL,
         QTD_MINIMA_PRODUTO INT NOT NULL,
-        NUMERO_NF_PRODUTO VARCHAR(255) NOT NULL UNIQUE,
         FOREIGN KEY (FK_ID_ESTOQUE) REFERENCES ESTOQUE(ID_ESTOQUE) ON DELETE SET NULL
         ); 
 /*obs: Não sei se devia ter um parametro do tipo: código de barra, já que ele tem um metodo chamado: "cadastra_via_nota_discal, eu acho?"
