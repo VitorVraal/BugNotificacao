@@ -1,8 +1,6 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, EmailStr
 from typing import List
-from fastapi import Depends
-from utils.auth import pegar_usuario
 from controller.usuarios_controller.usuarios_controller import (
     criar_usuario_controller,
     listar_usuarios_controller,
@@ -10,6 +8,7 @@ from controller.usuarios_controller.usuarios_controller import (
     atualizar_usuario_controller,
     fazer_login_controller
 )
+from utils.auth import criar_token
 
 router = APIRouter()
 
@@ -58,6 +57,16 @@ def atualizar(usuario: UsuarioUpdate):
 @router.post("/login")
 def login(dados: Login):
     usuario = fazer_login_controller(dados.email_usuario, dados.senha_usuario)
-    if usuario:
-        return usuario
-    raise HTTPException(status_code=401, detail="Credenciais inválidas.")
+    print("Usuário retornado:", usuario)
+    
+    if not usuario:
+        raise HTTPException(status_code=401, detail="Credenciais inválidas.")
+    
+    # Verifique as chaves aqui:
+    print("Chaves do usuário:", usuario.keys())
+    
+    token = criar_token({
+        "id": usuario.get("ID_USUARIO") or usuario.get("id_usuario"),
+        "email": usuario.get("EMAIL_USUARIO") or usuario.get("email_usuario")
+    })
+    return {"access_token": token, "token_type": "bearer"}

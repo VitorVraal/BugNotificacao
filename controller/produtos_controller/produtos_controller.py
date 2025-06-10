@@ -7,12 +7,13 @@ from model.produtos_model.produtos_model import (
     coleta_de_dados_email
 )
 
-def insert_produto_controller(NOME_PRODUTO, PRECO_PRODUTO, DESC_PRODUTO,
-                              NUMERO_NF_PRODUTO, VALIDADE_PRODUTO, FORNECEDOR_PRODUTO,
-                              QTD_MINIMA_PRODUTO, CATEGORIA_ESTOQUE, QTDE_ESTOQUE):
-    return CADASTRAR_PRODUTO_ESTOQUE(NOME_PRODUTO, PRECO_PRODUTO, DESC_PRODUTO,
-                                     NUMERO_NF_PRODUTO, VALIDADE_PRODUTO, FORNECEDOR_PRODUTO,
-                                     QTD_MINIMA_PRODUTO, CATEGORIA_ESTOQUE, QTDE_ESTOQUE)
+def insert_produto_controller(NOME_PRODUTO, CATEGORIA_ESTOQUE, DESC_PRODUTO, QTDE_ESTOQUE, 
+                              PRECO_PRODUTO, QTD_MINIMA_PRODUTO, VALIDADE_PRODUTO, NUMERO_NF_PRODUTO, 
+                              FORNECEDOR_PRODUTO
+                              ):
+    return CADASTRAR_PRODUTO_ESTOQUE(NOME_PRODUTO, CATEGORIA_ESTOQUE, DESC_PRODUTO, QTDE_ESTOQUE, 
+                              PRECO_PRODUTO, QTD_MINIMA_PRODUTO, VALIDADE_PRODUTO, NUMERO_NF_PRODUTO, 
+                              FORNECEDOR_PRODUTO)
 
 def delete_produto_estoque_controller(id_estoque: int):
     # validation, resultado = PROCURAR_PRODUTO_ID(id_produto)

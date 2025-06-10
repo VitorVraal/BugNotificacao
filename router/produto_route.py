@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 from datetime import date
 from utils.auth import pegar_usuario
 from controller.produtos_controller.produtos_controller import (
@@ -24,9 +24,13 @@ class Produto(BaseModel):
     qtd_minima_produto: int
 
 class Estoque(BaseModel):
-    id_estoque: int
+    id_estoque: Optional[int] = None
     categoria_estoque: str
     qtde_estoque: int
+    
+class ProdutoEstoque(BaseModel):
+    produto: Produto
+    estoque: Estoque    
 
 class ProdutoUpdate(BaseModel):
     id_produto: int
@@ -42,19 +46,18 @@ class ProdutoDelete(BaseModel):
     nome_produto: str
 
 @router.post("/produto", status_code=201)
-# def cadastrar_produto_router(produto: Produto, estoque: Estoque):
-def cadastrar_produto_router(produto: Produto, estoque: Estoque, usuario=Depends(pegar_usuario)):
+def cadastrar_produto_router(dados: ProdutoEstoque, usuario=Depends(pegar_usuario)):
     try:
         insert_produto_controller(
-            produto.nome_produto,
-            produto.preco_produto,
-            produto.desc_produto,
-            estoque.categoria_estoque,
-            estoque.qtde_estoque,
-            produto.numero_nf_produto,
-            produto.validade_produto,
-            produto.fornecedor_produto,
-            produto.qtd_minima_produto
+            dados.produto.nome_produto,
+            dados.estoque.categoria_estoque,
+            dados.produto.desc_produto,
+            dados.estoque.qtde_estoque,
+            dados.produto.preco_produto,
+            dados.produto.qtd_minima_produto,
+            dados.produto.validade_produto,
+            dados.produto.numero_nf_produto,
+            dados.produto.fornecedor_produto,
         )
         return {"message": "Produto e estoque cadastrados com sucesso!"}
     except Exception as err:

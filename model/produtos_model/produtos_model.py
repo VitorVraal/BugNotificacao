@@ -6,18 +6,25 @@ from typing import Optional, Protocol
 from model.produtos_model.modules_produtos_model.pdf_reader import read_pdf
 from model.produtos_model.modules_produtos_model.email_data_extractor import read_email_data, baixar_anexos_pdf
 
-def CADASTRAR_PRODUTO_ESTOQUE(NOME_PRODUTO, PRECO_PRODUTO, DESC_PRODUTO,
-                              NUMERO_NF_PRODUTO, VALIDADE_PRODUTO, FORNECEDOR_PRODUTO,
-                              QTD_MINIMA_PRODUTO, CATEGORIA_ESTOQUE, QTDE_ESTOQUE):
+def CADASTRAR_PRODUTO_ESTOQUE(NOME_PRODUTO, CATEGORIA_ESTOQUE, DESC_PRODUTO, QTDE_ESTOQUE, 
+                              PRECO_PRODUTO, QTD_MINIMA_PRODUTO, VALIDADE_PRODUTO, NUMERO_NF_PRODUTO, 
+                              FORNECEDOR_PRODUTO):
+    try:
+        qtde_estoque_int = int(QTDE_ESTOQUE)
+    except ValueError:
+        print(f"Valor inválido para QTDE_ESTOQUE: {QTDE_ESTOQUE}")
+        return False, 'QTDE_ESTOQUE inválido'    
+    
     config = DBModel.get_dotenv()
     db = MySqlConnector(config)
     conn, msg = db.connection()
     try:
         cursor = conn.cursor()
         command = "CALL CADASTRAR_PRODUTO_ESTOQUE(%s, %s, %s, %s, %s, %s, %s, %s, %s)"
-        values = (NOME_PRODUTO, PRECO_PRODUTO, DESC_PRODUTO,
-                              NUMERO_NF_PRODUTO, VALIDADE_PRODUTO, FORNECEDOR_PRODUTO,
-                              QTD_MINIMA_PRODUTO, CATEGORIA_ESTOQUE, QTDE_ESTOQUE)
+        values = (NOME_PRODUTO, CATEGORIA_ESTOQUE, DESC_PRODUTO, QTDE_ESTOQUE, 
+                              PRECO_PRODUTO, QTD_MINIMA_PRODUTO, VALIDADE_PRODUTO, NUMERO_NF_PRODUTO, 
+                              FORNECEDOR_PRODUTO)
+        print("Valores enviados para procedure:", values)
         cursor.execute(command, values)
         conn.commit()
         return True, 'sucesso'
