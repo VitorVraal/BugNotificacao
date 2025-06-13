@@ -25,29 +25,39 @@ def delete_produto_estoque_controller(id_estoque: int):
     
 
 
-def update_produto_controller(p_id_estoque_upd=None,p_categoria_estoque_upd=None,p_qtde_estoque_upd=None,     
-        p_id_produto_upd=None,       
-        p_nome_produto_upd=None,     
-        p_preco_produto_upd=None,    
-        p_fk_id_estoque_upd=None,    
-        p_desc_produto_upd=None,     
-        p_numero_nf_produto_upd=None,
-        p_validade_produto_upd=None,
-        p_fornecedor_produto_upd=None,
-        p_qtd_minima_produto_upd=None
-    ):    
-    return ATUALIZAR_PRODUTO(p_id_estoque_upd,
-            p_categoria_estoque_upd,
-            p_qtde_estoque_upd,
-            p_id_produto_upd,
-            p_nome_produto_upd,
-            p_preco_produto_upd,
-            p_fk_id_estoque_upd,
-            p_desc_produto_upd,
-            p_numero_nf_produto_upd,
-            p_validade_produto_upd,
-            p_fornecedor_produto_upd,
-            p_qtd_minima_produto_upd)
+def update_produto_controller(
+    id_estoque,
+    categoria_estoque,
+    qtde_estoque,
+    id_produto,
+    nome_produto,
+    preco_produto,
+    desc_produto,
+    numero_nf_produto,
+    validade_produto,
+    fornecedor_produto,
+    qtd_minima_produto
+):
+    # Validação básica
+    if not id_estoque or not id_produto:
+        return False, "ID do estoque e do produto são obrigatórios"
+    
+    try:
+        return ATUALIZAR_PRODUTO(
+            p_id_estoque_upd=int(id_estoque),
+            p_categoria_estoque_upd=categoria_estoque,
+            p_qtde_estoque_upd=int(qtde_estoque) if qtde_estoque is not None else None,
+            p_id_produto_upd=int(id_produto),
+            p_nome_produto_upd=nome_produto,
+            p_preco_produto_upd=float(preco_produto) if preco_produto is not None else None,
+            p_desc_produto_upd=desc_produto,
+            p_numero_nf_produto_upd=numero_nf_produto,
+            p_validade_produto_upd=validade_produto,
+            p_fornecedor_produto_upd=fornecedor_produto,
+            p_qtd_minima_produto_upd=int(qtd_minima_produto) if qtd_minima_produto is not None else None
+        )
+    except Exception as e:
+        return False, str(e)
 
 # print(update_produto_controller(2, "teste novo estoque", 2000))
 

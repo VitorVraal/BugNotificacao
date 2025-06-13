@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import date
 from utils.auth import pegar_usuario
@@ -35,10 +35,10 @@ class ProdutoEstoque(BaseModel):
 class ProdutoUpdate(BaseModel):
     id_produto: int
     nome_produto: str
-    preco_produto: float
-    desc_produto: str
-    numero_nf_produto: Optional[str]
-    validade_produto: Optional[date] 
+    preco_produto: float = Field(default=0.0)
+    desc_produto: str = Field(default="")
+    numero_nf_produto: str = Field(default="")
+    validade_produto: date
     fornecedor_produto: str
     qtd_minima_produto: int
 
@@ -102,7 +102,6 @@ def list_produto_router(usuario=Depends(pegar_usuario)):
 
 
 @router.delete("/produto/{id}", status_code=200, summary="Excluir produto pelo ID")
-#def excluir_produto_router(id: int):
 def excluir_produto_router(id: int, usuario=Depends(pegar_usuario)):
     result = delete_produto_estoque_controller(id)
     if result[0]:  # Excluído com sucesso
@@ -112,22 +111,27 @@ def excluir_produto_router(id: int, usuario=Depends(pegar_usuario)):
 
 @router.put("/produto")
 def atualizar_produto_router(dados: ProdutoEstoqueUpdate, usuario=Depends(pegar_usuario)):
-    update_produto_controller(
-        dados.estoque.id_estoque,
-        dados.estoque.categoria_estoque,
-        dados.estoque.qtde_estoque,
-
-        dados.produto.id_produto,
-        dados.produto.nome_produto,
-        dados.produto.preco_produto,
-        dados.estoque.id_estoque,
-        dados.produto.desc_produto,
-        dados.produto.numero_nf_produto,
-        dados.produto.validade_produto,
-        dados.produto.fornecedor_produto,
-        dados.produto.qtd_minima_produto
-    )
-    return {"message": "Produto atualizado com sucesso."}
+    try:
+        success, message = update_produto_controller(
+            dados.estoque.id_estoque,
+            dados.estoque.categoria_estoque,
+            dados.estoque.qtde_estoque,
+            dados.produto.id_produto,
+            dados.produto.nome_produto,
+            dados.produto.preco_produto,
+            dados.produto.desc_produto,
+            dados.produto.numero_nf_produto,
+            dados.produto.validade_produto,
+            dados.produto.fornecedor_produto,
+            dados.produto.qtd_minima_produto
+        )
+        
+        if not success:
+            raise HTTPException(status_code=400, detail=message)
+            
+        return {"message": "Produto atualizado com sucesso."}
+    except Exception as err:
+        raise HTTPException(status_code=400, detail=str(err))
 
 @router.get("/coleta-email", summary="Coleta dados de e-mails do Gmail com anexos PDF")
 def coleta_email_router(usuario=Depends(pegar_usuario)):

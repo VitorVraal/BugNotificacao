@@ -78,17 +78,10 @@ def PROCURAR_PRODUTO_ID(ID_PRODUTO):
 
 
 def ATUALIZAR_PRODUTO(
-    #atualizar o estoque
-    p_id_estoque_upd=None,p_categoria_estoque_upd=None,p_qtde_estoque_upd=None,     
-    #parte para atualizar o produto
-    p_id_produto_upd=None,       
-    p_nome_produto_upd=None,     
-    p_preco_produto_upd=None,    
-    p_fk_id_estoque_upd=None,    
-    p_desc_produto_upd=None,     
-    p_numero_nf_produto_upd=None,
-    p_validade_produto_upd=None,
-    p_fornecedor_produto_upd=None,
+    p_id_estoque_upd=None, p_categoria_estoque_upd=None, p_qtde_estoque_upd=None,     
+    p_id_produto_upd=None, p_nome_produto_upd=None, p_preco_produto_upd=None,    
+    p_desc_produto_upd=None, p_numero_nf_produto_upd=None,
+    p_validade_produto_upd=None, p_fornecedor_produto_upd=None,
     p_qtd_minima_produto_upd=None
 ):
     config = DBModel.get_dotenv()
@@ -99,7 +92,7 @@ def ATUALIZAR_PRODUTO(
         return False, f"Falha na conexão: {msg}"
     try:
         cursor = conn.cursor()
-        command = "CALL ATUALIZAR_ESTOQUE_PRODUTO(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        command = "CALL ATUALIZAR_ESTOQUE_PRODUTO(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
         values = (
             p_id_estoque_upd,
             p_categoria_estoque_upd,
@@ -107,7 +100,6 @@ def ATUALIZAR_PRODUTO(
             p_id_produto_upd,
             p_nome_produto_upd,
             p_preco_produto_upd,
-            p_fk_id_estoque_upd,
             p_desc_produto_upd,
             p_numero_nf_produto_upd,
             p_validade_produto_upd,
@@ -120,13 +112,8 @@ def ATUALIZAR_PRODUTO(
     except Exception as e:
         print(f"Erro ao atualizar produto: {e}")
         return False, 'fracassado'
-
     finally:
         if cursor:
-            try:
-                cursor.fetchall()
-            except Error as err:
-                print(f"Erro ao tentar ler resultados do cursor (pode ser ignorado se não houver resultado): {err}")
             cursor.close()
         if conn:
             conn.close()
@@ -166,14 +153,13 @@ def EXCLUIR_PRODUTO_GERAL(ID_ESTOQUE):
         conn.commit()
         print(f"ESTOQUE '{ID_ESTOQUE}' excluído com sucesso")
         return True, 'ESTOQUE excluído'
-    
     except Exception as e:
         print(f"Erro ao remover ESTOQUE: {e}")
-        return False, 'fracassado'
+        return False, str(e)
     finally:
         if cursor:
             cursor.close()
-        if db:
+        if conn:
             conn.close()
 
 

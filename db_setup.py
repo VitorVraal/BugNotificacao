@@ -245,8 +245,7 @@ def criar_tabelas():
             IN p_qtde_estoque_upd INT,
             IN p_id_produto_upd INT,
             IN p_nome_produto_upd VARCHAR(255),
-            IN p_preco_produto_upd FLOAT,
-            IN p_fk_id_estoque_upd INT,
+            IN p_preco_produto_upd DECIMAL(10,2),
             IN p_desc_produto_upd VARCHAR(255),
             IN p_numero_nf_produto_upd VARCHAR(255),
             IN p_validade_produto_upd DATE,
@@ -256,37 +255,31 @@ def criar_tabelas():
         BEGIN
             DECLARE EXIT HANDLER FOR SQLEXCEPTION
             BEGIN
-                ROLLBACK; 
-                RESIGNAL; 
+                ROLLBACK;
+                RESIGNAL;
             END;
 
             START TRANSACTION;
 
-            IF p_id_estoque_upd IS NOT NULL THEN
-                UPDATE ESTOQUE
-                SET
-                    CATEGORIA_ESTOQUE = COALESCE(p_categoria_estoque_upd, CATEGORIA_ESTOQUE), 
-                    QTDE_ESTOQUE = COALESCE(p_qtde_estoque_upd, QTDE_ESTOQUE)
-                WHERE ID_ESTOQUE = p_id_estoque_upd;
-            END IF;
+            UPDATE ESTOQUE
+            SET
+                CATEGORIA_ESTOQUE = IFNULL(p_categoria_estoque_upd, CATEGORIA_ESTOQUE),
+                QTDE_ESTOQUE = IFNULL(p_qtde_estoque_upd, QTDE_ESTOQUE)
+            WHERE ID_ESTOQUE = p_id_estoque_upd;
 
-            IF p_id_produto_upd IS NOT NULL THEN
-                UPDATE PRODUTOS
-                SET
-                    NOME_PRODUTO = COALESCE(p_nome_produto_upd, NOME_PRODUTO),
-                    PRECO_PRODUTO = COALESCE(p_preco_produto_upd, PRECO_PRODUTO),
-                    FK_ID_ESTOQUE = COALESCE(p_fk_id_estoque_upd, FK_ID_ESTOQUE),
-                    DESC_PRODUTO = COALESCE(p_desc_produto_upd, DESC_PRODUTO),
-                    NUMERO_NF_PRODUTO = COALESCE(p_numero_nf_produto_upd, NUMERO_NF_PRODUTO),
-                    VALIDADE_PRODUTO = COALESCE(p_validade_produto_upd, VALIDADE_PRODUTO),
-                    FORNECEDOR_PRODUTO = COALESCE(p_fornecedor_produto_upd, FORNECEDOR_PRODUTO),
-                    QTD_MINIMA_PRODUTO = COALESCE(p_qtd_minima_produto_upd, QTD_MINIMA_PRODUTO)
-                WHERE ID_PRODUTO = p_id_produto_upd;
-            END IF;
+            UPDATE PRODUTOS
+            SET
+                NOME_PRODUTO = IFNULL(p_nome_produto_upd, NOME_PRODUTO),
+                PRECO_PRODUTO = IFNULL(p_preco_produto_upd, PRECO_PRODUTO),
+                DESC_PRODUTO = IFNULL(p_desc_produto_upd, DESC_PRODUTO),
+                NUMERO_NF_PRODUTO = IFNULL(p_numero_nf_produto_upd, NUMERO_NF_PRODUTO),
+                VALIDADE_PRODUTO = IFNULL(p_validade_produto_upd, VALIDADE_PRODUTO),
+                FORNECEDOR_PRODUTO = IFNULL(p_fornecedor_produto_upd, FORNECEDOR_PRODUTO),
+                QTD_MINIMA_PRODUTO = IFNULL(p_qtd_minima_produto_upd, QTD_MINIMA_PRODUTO)
+            WHERE ID_PRODUTO = p_id_produto_upd;
 
             COMMIT;
-
-        END 
+        END
         ''')
         
         #Procedure de listar produtos
