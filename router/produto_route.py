@@ -35,12 +35,21 @@ class ProdutoEstoque(BaseModel):
 class ProdutoUpdate(BaseModel):
     id_produto: int
     nome_produto: str
-    preco_produto: float  
+    preco_produto: float
     desc_produto: str
-    numero_nf_produto: str
-    validade_produto: date
+    numero_nf_produto: Optional[str]
+    validade_produto: Optional[date] 
     fornecedor_produto: str
     qtd_minima_produto: int
+
+class EstoqueUpdate(BaseModel):
+    id_estoque: int
+    qtde_estoque: int
+    categoria_estoque: str
+
+class ProdutoEstoqueUpdate(BaseModel):
+    produto: ProdutoUpdate
+    estoque: EstoqueUpdate
 
 class ProdutoDelete(BaseModel):
     nome_produto: str
@@ -88,22 +97,21 @@ def excluir_produto_router(id: int, usuario=Depends(pegar_usuario)):
         raise HTTPException(status_code=404, detail=result[1])
 
 @router.put("/produto")
-#def atualizar_produto_router(produto: ProdutoUpdate):
-def atualizar_produto_router(produto: ProdutoUpdate, estoque: Estoque, usuario=Depends(pegar_usuario)):
+def atualizar_produto_router(dados: ProdutoEstoqueUpdate, usuario=Depends(pegar_usuario)):
     update_produto_controller(
-        estoque.id_estoque,
-        estoque.categoria_estoque,
-        estoque.qtde_estoque,        
-        
-        produto.id_produto,
-        produto.nome_produto,
-        produto.preco_produto,
-        estoque.id_estoque,
-        produto.desc_produto,
-        produto.numero_nf_produto,
-        produto.validade_produto,
-        produto.fornecedor_produto,
-        produto.qtd_minima_produto
+        dados.estoque.id_estoque,
+        dados.estoque.categoria_estoque,
+        dados.estoque.qtde_estoque,
+
+        dados.produto.id_produto,
+        dados.produto.nome_produto,
+        dados.produto.preco_produto,
+        dados.estoque.id_estoque,
+        dados.produto.desc_produto,
+        dados.produto.numero_nf_produto,
+        dados.produto.validade_produto,
+        dados.produto.fornecedor_produto,
+        dados.produto.qtd_minima_produto
     )
     return {"message": "Produto atualizado com sucesso."}
 
