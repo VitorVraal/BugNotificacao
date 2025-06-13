@@ -57,7 +57,15 @@ class ProdutoDelete(BaseModel):
 @router.post("/produto", status_code=201)
 def cadastrar_produto_router(dados: ProdutoEstoque, usuario=Depends(pegar_usuario)):
     try:
-        insert_produto_controller(
+        # Verifique se o produto já existe
+        produtos = list_produto_estoque()
+        if any(p['NOME_PRODUTO'].lower() == dados.produto.nome_produto.lower() for p in produtos):
+            raise HTTPException(
+                status_code=400,
+                detail="Produto já cadastrado. Use a função de atualização para modificar."
+            )
+            
+        success, message = insert_produto_controller(
             dados.produto.nome_produto,
             dados.estoque.categoria_estoque,
             dados.produto.desc_produto,
@@ -68,7 +76,13 @@ def cadastrar_produto_router(dados: ProdutoEstoque, usuario=Depends(pegar_usuari
             dados.produto.numero_nf_produto,
             dados.produto.fornecedor_produto,
         )
-        return {"message": "Produto e estoque cadastrados com sucesso!"}
+        
+        if not success:
+            raise HTTPException(status_code=400, detail=message)
+            
+        return {"message": "Produto cadastrado com sucesso!"}
+    except HTTPException:
+        raise
     except Exception as err:
         raise HTTPException(status_code=400, detail=str(err))
 

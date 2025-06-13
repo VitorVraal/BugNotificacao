@@ -171,20 +171,21 @@ def criar_tabelas():
         
         #procedure cadastrar produto no estoque
         cursor.execute('''
+        
         CREATE PROCEDURE CADASTRAR_PRODUTO_ESTOQUE(
-        IN P_NOME_PRODUTO VARCHAR(255),
-        IN P_CATEGORIA_ESTOQUE VARCHAR(50),
-        IN P_DESC_PRODUTO VARCHAR(255),
-        IN P_QTDE_ESTOQUE INT,
-        IN P_PRECO_PRODUTO FLOAT,
-        IN P_QTD_MINIMA_PRODUTO INT,
-        IN P_VALIDADE_PRODUTO DATE,
-        IN P_NUMERO_NF_PRODUTO VARCHAR(255),
-        IN P_FORNECEDOR_PRODUTO VARCHAR(255)
+            IN P_NOME_PRODUTO VARCHAR(255),
+            IN P_CATEGORIA_ESTOQUE VARCHAR(50),
+            IN P_DESC_PRODUTO VARCHAR(255),
+            IN P_QTDE_ESTOQUE INT,
+            IN P_PRECO_PRODUTO DECIMAL(10,2),
+            IN P_QTD_MINIMA_PRODUTO INT,
+            IN P_VALIDADE_PRODUTO DATE,
+            IN P_NUMERO_NF_PRODUTO VARCHAR(255),
+            IN P_FORNECEDOR_PRODUTO VARCHAR(255)
         )
         BEGIN
-            DECLARE V_ID_PRODUTO INT;
             DECLARE V_ID_ESTOQUE INT;
+            DECLARE PRODUTO_EXISTENTE INT DEFAULT 0;
 
             DECLARE EXIT HANDLER FOR SQLEXCEPTION
             BEGIN
@@ -194,53 +195,54 @@ def criar_tabelas():
 
             START TRANSACTION;
 
-            SELECT ID_PRODUTO, FK_ID_ESTOQUE INTO V_ID_PRODUTO, V_ID_ESTOQUE
-            FROM PRODUTOS
+            -- Verifica se o produto já existe
+            SELECT COUNT(*) INTO PRODUTO_EXISTENTE 
+            FROM PRODUTOS 
             WHERE NOME_PRODUTO = P_NOME_PRODUTO;
 
-            IF V_ID_PRODUTO IS NOT NULL THEN
-                UPDATE ESTOQUE
-                SET QTDE_ESTOQUE = COALESCE(QTDE_ESTOQUE, 0) + P_QTDE_ESTOQUE
-                WHERE ID_ESTOQUE = V_ID_ESTOQUE;
-
+            IF PRODUTO_EXISTENTE > 0 THEN
+                SIGNAL SQLSTATE '45000' 
+                SET MESSAGE_TEXT = 'Produto já cadastrado. Use a função de atualização para modificar.';
             ELSE
-                SELECT ID_ESTOQUE INTO V_ID_ESTOQUE
-                FROM ESTOQUE
-                WHERE CATEGORIA_ESTOQUE = P_CATEGORIA_ESTOQUE; 
+                -- Cria novo estoque
+                INSERT INTO ESTOQUE(CATEGORIA_ESTOQUE, QTDE_ESTOQUE)
+                VALUES(P_CATEGORIA_ESTOQUE, P_QTDE_ESTOQUE);
 
-                IF V_ID_ESTOQUE IS NOT NULL THEN
-                    UPDATE ESTOQUE
-                    SET QTDE_ESTOQUE = COALESCE(QTDE_ESTOQUE, 0) + P_QTDE_ESTOQUE
-                    WHERE ID_ESTOQUE = V_ID_ESTOQUE;
+                SET V_ID_ESTOQUE = LAST_INSERT_ID();
 
-                    INSERT INTO PRODUTOS(NOME_PRODUTO, PRECO_PRODUTO, FK_ID_ESTOQUE, DESC_PRODUTO, NUMERO_NF_PRODUTO, VALIDADE_PRODUTO, FORNECEDOR_PRODUTO, QTD_MINIMA_PRODUTO) 
-                    VALUES(P_NOME_PRODUTO, P_PRECO_PRODUTO, V_ID_ESTOQUE, P_DESC_PRODUTO, P_NUMERO_NF_PRODUTO, P_VALIDADE_PRODUTO, P_FORNECEDOR_PRODUTO, P_QTD_MINIMA_PRODUTO);
-
-                ELSE
-                    INSERT INTO ESTOQUE(CATEGORIA_ESTOQUE, QTDE_ESTOQUE)
-                    VALUES(P_CATEGORIA_ESTOQUE, P_QTDE_ESTOQUE);
-                    
-                    SET V_ID_ESTOQUE = LAST_INSERT_ID();
-
-                    INSERT INTO PRODUTOS(NOME_PRODUTO, PRECO_PRODUTO, FK_ID_ESTOQUE, DESC_PRODUTO, NUMERO_NF_PRODUTO, VALIDADE_PRODUTO, FORNECEDOR_PRODUTO, QTD_MINIMA_PRODUTO)
-                    VALUES(P_NOME_PRODUTO, P_PRECO_PRODUTO, V_ID_ESTOQUE, P_DESC_PRODUTO, P_NUMERO_NF_PRODUTO, P_VALIDADE_PRODUTO, P_FORNECEDOR_PRODUTO, P_QTD_MINIMA_PRODUTO);
-                END IF;
+                -- Insere produto
+                INSERT INTO PRODUTOS(
+                    NOME_PRODUTO,
+                    PRECO_PRODUTO,
+                    FK_ID_ESTOQUE,
+                    DESC_PRODUTO,
+                    NUMERO_NF_PRODUTO,
+                    VALIDADE_PRODUTO,
+                    FORNECEDOR_PRODUTO,
+                    QTD_MINIMA_PRODUTO
+                )
+                VALUES(
+                    P_NOME_PRODUTO,
+                    P_PRECO_PRODUTO,
+                    V_ID_ESTOQUE,
+                    P_DESC_PRODUTO,
+                    P_NUMERO_NF_PRODUTO,
+                    P_VALIDADE_PRODUTO,
+                    P_FORNECEDOR_PRODUTO,
+                    P_QTD_MINIMA_PRODUTO
+                );
             END IF;
 
-            COMMIT; -- Confirma a transação
-        END 
-
+            COMMIT;
+        END
         ''')
         
         #procedure de atualizar produto
         cursor.execute('''
         CREATE PROCEDURE ATUALIZAR_ESTOQUE_PRODUTO(
-            -- Parâmetros para ESTOQUE (opcionais)
             IN p_id_estoque_upd INT,
             IN p_categoria_estoque_upd VARCHAR(255),
             IN p_qtde_estoque_upd INT,
-
-            -- Parâmetros para PRODUTOS (opcionais)
             IN p_id_produto_upd INT,
             IN p_nome_produto_upd VARCHAR(255),
             IN p_preco_produto_upd FLOAT,
@@ -252,7 +254,6 @@ def criar_tabelas():
             IN p_qtd_minima_produto_upd INT
         )
         BEGIN
-            -- Handler de erro para reverter transação em caso de exceção SQL
             DECLARE EXIT HANDLER FOR SQLEXCEPTION
             BEGIN
                 ROLLBACK; 
@@ -269,7 +270,6 @@ def criar_tabelas():
                 WHERE ID_ESTOQUE = p_id_estoque_upd;
             END IF;
 
-            -- Atualiza o PRODUTO se um ID de produto for fornecido
             IF p_id_produto_upd IS NOT NULL THEN
                 UPDATE PRODUTOS
                 SET
