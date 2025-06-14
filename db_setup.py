@@ -287,6 +287,7 @@ def criar_tabelas():
         CREATE PROCEDURE LISTAR_PRODUTOS()
         BEGIN
             SELECT 
+                p.ID_PRODUTO,
                 p.NOME_PRODUTO, 
                 p.PRECO_PRODUTO, 
                 p.DESC_PRODUTO,
@@ -294,10 +295,12 @@ def criar_tabelas():
                 p.VALIDADE_PRODUTO,
                 p.FORNECEDOR_PRODUTO,
                 p.QTD_MINIMA_PRODUTO,
+                p.FK_ID_ESTOQUE,
+                e.ID_ESTOQUE,
                 e.CATEGORIA_ESTOQUE, 
                 e.QTDE_ESTOQUE
             FROM PRODUTOS p
-            LEFT JOIN ESTOQUE e ON e.ID_ESTOQUE = p.FK_ID_ESTOQUE;
+            LEFT JOIN ESTOQUE e ON p.FK_ID_ESTOQUE = e.ID_ESTOQUE;
         END
         ''')
 
