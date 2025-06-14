@@ -6,11 +6,13 @@ from utils.auth import pegar_usuario
 from controller.produtos_controller.produtos_controller import (
     insert_produto_controller,
     update_produto_controller,
-    search_produto_controller,
+    search_produto_name_controller,
     delete_produto_estoque_controller,
     list_produto_estoque,
-    iniciar_coleta_email_controller
+    iniciar_coleta_email_controller,
 )
+from model.produtos_model.produtos_model import diminuir_estoque
+
 
 router = APIRouter()
 
@@ -46,6 +48,10 @@ class EstoqueUpdate(BaseModel):
     id_estoque: int
     qtde_estoque: int
     categoria_estoque: str
+    
+class EstoqueCheckout(BaseModel):
+    id_produto: int
+    qtde_estoque: int
 
 class ProdutoEstoqueUpdate(BaseModel):
     produto: ProdutoUpdate
@@ -86,14 +92,16 @@ def cadastrar_produto_router(dados: ProdutoEstoque, usuario=Depends(pegar_usuari
     except Exception as err:
         raise HTTPException(status_code=400, detail=str(err))
 
-@router.get("/produto/{id}")
-#def search_produto_router(id: int):
-def search_produto_router(id: int, usuario=Depends(pegar_usuario)):
-    produto_data = search_produto_controller(id)
+@router.get("/produto/nome/{nome}")
+def search_produto_nome_router(nome: str, usuario=Depends(pegar_usuario)):
+    produto_data = search_produto_name_controller(nome)
     if produto_data:
-        return {"message": "Produto localizado", "data": produto_data}
+        return {
+            "message": "Produtos encontrados",
+            "data": produto_data 
+        }
     else:
-        raise HTTPException(status_code=404, detail="Nenhum produto encontrado com essa ID.")
+        raise HTTPException(status_code=404, detail="Nenhum produto encontrado com esse nome.")
 
 @router.get("/produto", response_model=List[dict])
 #def list_produto_router():
@@ -140,3 +148,11 @@ def coleta_email_router(usuario=Depends(pegar_usuario)):
         return {"message": "Coleta de e-mail concluída", "resultado": str(result)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro na coleta de e-mails: {e}")
+    
+@router.post("/estoque/atualizar")
+def atualizar_estoque(dados: EstoqueCheckout, usuario=Depends(pegar_usuario)):
+    success, msg = diminuir_estoque(dados.id_produto, dados.qtde_estoque)
+    if success:
+        return {"message": "Estoque atualizado"}
+    else:
+        raise HTTPException(status_code=400, detail=msg)

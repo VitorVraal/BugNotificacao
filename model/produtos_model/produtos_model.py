@@ -57,24 +57,25 @@ def LISTAR_PRODUTOS():
         return []
 # print(LISTAR_PRODUTOS())
 
-def PROCURAR_PRODUTO_ID(ID_PRODUTO):
+def PROCURAR_PRODUTO_NOME(NOME_PRODUTO):
     config = DBModel.get_dotenv()
     db = MySqlConnector(config)
     conn, msg = db.connection()
     try:
         cursor = conn.cursor()
-        command = "CALL PROCURAR_PRODUTO_ID(%s)"
-        values = (ID_PRODUTO,)
+        command = "CALL PROCURAR_PRODUTO_NOME(%s)"
+        values = (NOME_PRODUTO,)
         cursor.execute(command, values)
         resultados = cursor.fetchall()
         return True, resultados
     except Exception as e:
-        return False, f"Erro ao procurar produto: {e}"
+        return False, f"Erro ao procurar produto por nome: {e}"
     finally:
         if cursor:
             cursor.close()
         if db:
             conn.close()
+
 
 
 def ATUALIZAR_PRODUTO(
@@ -177,3 +178,18 @@ def coleta_de_dados_email():
     except:
         print("erro ao buscar no email")
         
+def diminuir_estoque(produto_id: int, quantidade: int):
+    config = DBModel.get_dotenv()
+    db = MySqlConnector(config)
+    conn, msg = db.connection()
+    try:
+        cursor = conn.cursor()
+        command = "UPDATE ESTOQUE SET QTDE_ESTOQUE = QTDE_ESTOQUE - %s WHERE ID_ESTOQUE = (SELECT FK_ID_ESTOQUE FROM PRODUTOS WHERE ID_PRODUTO = %s)"
+        cursor.execute(command, (quantidade, produto_id))
+        conn.commit()
+        return True, "Estoque atualizado"
+    except Exception as e:
+        return False, f"Erro ao atualizar estoque: {e}"
+    finally:
+        cursor.close()
+        conn.close()

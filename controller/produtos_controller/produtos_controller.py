@@ -1,6 +1,6 @@
 from model.produtos_model.produtos_model import (
     CADASTRAR_PRODUTO_ESTOQUE,
-    PROCURAR_PRODUTO_ID,
+    PROCURAR_PRODUTO_NOME,
     ATUALIZAR_PRODUTO,
     EXCLUIR_PRODUTO_GERAL,
     LISTAR_PRODUTOS,
@@ -62,9 +62,29 @@ def update_produto_controller(
 # print(update_produto_controller(2, "teste novo estoque", 2000))
 
 
-def search_produto_controller(ID_PRODUTO):
-    validation, resultado = PROCURAR_PRODUTO_ID(ID_PRODUTO)
-    return resultado  # Não há necessidade de condicional se ambos os caminhos retornam o mesmo valor
+def search_produto_name_controller(nome):
+    success, resultados = PROCURAR_PRODUTO_NOME(nome)
+    if not success:
+        return []
+
+    produtos = []
+    for row in resultados:
+        produtos.append({
+            "id_produto": row[0],
+            "nome_produto": row[1],
+            "preco_produto": row[2],
+            "desc_produto": row[3],
+            "numero_nf_produto": row[4],
+            "validade_produto": row[5],
+            "fornecedor_produto": row[6],
+            "qtd_minima_produto": row[7],
+            "id_estoque": row[8],
+            "categoria_estoque": row[9],
+            "qtde_estoque": row[10]
+        })
+
+    return produtos
+
 
 
 def list_produto_estoque():
@@ -76,3 +96,5 @@ def list_produto_estoque():
 
 def iniciar_coleta_email_controller():
     return coleta_de_dados_email()
+
+

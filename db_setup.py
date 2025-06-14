@@ -353,30 +353,27 @@ def criar_tabelas():
         END                
         ''')
         
-        # Procedure de procurar produto por ID
+        # Procedure de procurar produto por nome
         cursor.execute('''
-        CREATE PROCEDURE PROCURAR_PRODUTO_ID(
-	    IN P_ID_PRODUTO INT
+        CREATE PROCEDURE PROCURAR_PRODUTO_NOME(
+        IN P_NOME_PRODUTO VARCHAR(100)
         )
         BEGIN
-	    IF exists (SELECT 1 FROM PRODUTOS WHERE ID_PRODUTO = P_ID_PRODUTO) THEN
-		SELECT
-		p.ID_PRODUTO,
-		p.NOME_PRODUTO,
-		p.PRECO_PRODUTO,
-		p.DESC_PRODUTO,
+        SELECT
+        p.ID_PRODUTO,
+        p.NOME_PRODUTO,
+        p.PRECO_PRODUTO,
+        p.DESC_PRODUTO,
         p.NUMERO_NF_PRODUTO,
         p.VALIDADE_PRODUTO,
         p.FORNECEDOR_PRODUTO,
         p.QTD_MINIMA_PRODUTO,
-		e.ID_ESTOQUE,
-        e.QTDE_ESTOQUE,
-		e.CATEGORIA_ESTOQUE
-		FROM PRODUTOS p JOIN ESTOQUE e ON p.FK_ID_ESTOQUE = e.ID_ESTOQUE WHERE p.ID_PRODUTO = P_ID_PRODUTO;
-        ELSE
-		SIGNAL SQLSTATE '45000'
-		SET MESSAGE_TEXT = 'Erro: Estoque não encontrado.';
-        END IF;
+        e.ID_ESTOQUE,
+        e.CATEGORIA_ESTOQUE,
+        e.QTDE_ESTOQUE
+        FROM PRODUTOS p
+        JOIN ESTOQUE e ON p.FK_ID_ESTOQUE = e.ID_ESTOQUE
+        WHERE p.NOME_PRODUTO LIKE CONCAT('%', P_NOME_PRODUTO, '%');
         END               
         ''')
 
