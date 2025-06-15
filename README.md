@@ -131,7 +131,7 @@ Este projeto possui backend (FastAPI + Python) e frontend (Vue.js + Vite) integr
 1. Clone o repositório:
 
 ```bash
-git clone https://github.com/DSM2SEM2025/TimeGabriel-Front.git
+git clone https://github.com/DSM2SEM2025/TimeGabrielPI.git
 ```
 
 2. Acesse a pasta do projeto:
