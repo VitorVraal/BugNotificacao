@@ -137,7 +137,7 @@ git clone https://github.com/DSM2SEM2025/TimeGabrielPI.git
 2. Acesse a pasta do projeto:
 
 ```bash
-cd TimeGabriel-Front
+cd TimeGabrielPI
 ```
 
 3. Execute o script de setup:
