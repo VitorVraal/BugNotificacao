@@ -233,7 +233,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import {
   TruckIcon,
   CalendarIcon,
@@ -249,7 +249,7 @@ import { useNotificationSettings } from '@/composables/useNotificationSettings'
 
 const { stats } = useNotificationStats();
 
-const { notifications, unreadCount, markAllAsRead, clearAll, markAsRead } =
+const { notifications, unreadCount, markAllAsRead, clearAll, markAsRead, fetchNotifications } =
   useNotifications();
 
 const {
@@ -291,4 +291,10 @@ const handleSaveSettings = async () => {
     console.error('Erro ao salvar configurações:', error)
   }
 }
+
+onMounted(() => {
+  fetchNotifications();
+  setInterval(fetchNotifications, 10000); // a cada 10s
+});
+
 </script>

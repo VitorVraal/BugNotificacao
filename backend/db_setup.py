@@ -450,45 +450,37 @@ def criar_tabelas():
         END               
         ''')
         
-        #procedure de verificar entrega
-        cursor.execute('''
-        CREATE PROCEDURE VERIFICAR_ENTREGA(
-	    IN P_ID_ENTREGA INT 
-        )
-        BEGIN 
-	    IF exists (SELECT 1 FROM PEDIDO_ENTREGA WHERE ID_ENTREGA = P_ID_ENTREGA) THEN
-		UPDATE PEDIDO_ENTREGA SET STATUS_ENTREGA = TRUE WHERE ID_ENTREGA = P_ID_ENTREGA;
-        ELSE 
-		SET message_text = 'PRODUTO NÃO ENCONTRADO';
-        END IF;
-        END               
-        ''')
-        
         #procedure de notificação de falta de produto
         cursor.execute('''
         CREATE PROCEDURE NOTIFICACAO_FALTA_PRODUTO(
-	    IN P_NOME_PRODUTO VARCHAR(255), 
-	    IN limite_baixo INT, 
-	    IN limite_alto INT
+            IN P_NOME_PRODUTO VARCHAR(255)
         )
         BEGIN
-        DECLARE V_QTDE_ESTOQUE INT;
-        SELECT ESTOQUE.QTDE_ESTOQUE INTO V_QTDE_ESTOQUE
-        FROM PRODUTOS
-        JOIN ESTOQUE ON PRODUTO.FK_ID_ESTOQUE = ESTOQUE.ID_ESTOQUE
-        WHERE PRODUTO.NOME_PRODUTO = P_NOME_PRODUTO;
+            DECLARE V_QTDE_ESTOQUE INT;
+            DECLARE V_QTDE_MINIMA INT;
 
-        IF V_QTDE_ESTOQUE IS NULL THEN
-        SELECT CONCAT('Produto "', P_NOME_PRODUTO, '" não encontrado no estoque.') AS Notificação;
-        ELSEIF V_QTDE_ESTOQUE = 0 THEN
-        SELECT CONCAT('ALERTA: Produto "', P_NOME_PRODUTO, '" está esgotado!') AS Notificação;
-        ELSEIF V_QTDE_ESTOQUE <= limite_baixo THEN
-        SELECT CONCAT('ATENÇÃO: Produto "', P_NOME_PRODUTO, '" com estoque baixo (', V_QTDE_ESTOQUE, ' unidades).') AS Notificação;
-        ELSE
-        SELECT CONCAT('Produto "', P_NOME_PRODUTO, '" com estoque normal (', V_QTDE_ESTOQUE, ' unidades).') AS Notificação;
-        END IF;
-        END               
-        ''')
+            -- Busca a quantidade atual e a mínima do produto
+            SELECT E.QTDE_ESTOQUE, P.QTD_MINIMA_PRODUTO
+            INTO V_QTDE_ESTOQUE, V_QTDE_MINIMA
+            FROM PRODUTOS P
+            JOIN ESTOQUE E ON P.FK_ID_ESTOQUE = E.ID_ESTOQUE
+            WHERE P.NOME_PRODUTO = P_NOME_PRODUTO;
+
+            -- Verificações
+            IF V_QTDE_ESTOQUE IS NULL THEN
+                SELECT CONCAT('Produto "', P_NOME_PRODUTO, '" não encontrado no estoque.') AS Notificação;
+
+            ELSEIF V_QTDE_ESTOQUE = 0 THEN
+                SELECT CONCAT('ALERTA: Produto "', P_NOME_PRODUTO, '" está esgotado!') AS Notificação;
+
+            ELSEIF V_QTDE_ESTOQUE <= V_QTDE_MINIMA THEN
+                SELECT CONCAT('ATENÇÃO: Produto "', P_NOME_PRODUTO, '" com estoque baixo (', V_QTDE_ESTOQUE, ' unidades).') AS Notificação;
+
+            ELSE
+                SELECT CONCAT('Produto "', P_NOME_PRODUTO, '" com estoque normal (', V_QTDE_ESTOQUE, ' unidades).') AS Notificação;
+            END IF;
+        END
+        ''')               
         
         # ADICIONAR OUTRAS PROCEDURES AQUI
         connection.commit()

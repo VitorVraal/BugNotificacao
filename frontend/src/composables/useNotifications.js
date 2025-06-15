@@ -1,33 +1,12 @@
 import { ref, computed } from "vue";
+import { useNotificationSettings } from "./useNotificationSettings";
+import api from "@/services/api"; // axios
 
-const notifications = ref([
-  {
-    id: 1,
-    type: "baixo-estoque",
-    title: "Alerta de baixo Estoque",
-    message: "Lorem (3 sobrando)",
-    date: "02/04/2025",
-    read: false,
-  },
-  {
-    id: 2,
-    type: "validade",
-    title: "Alerta de Validade",
-    message: "3 Produtos vão vencer daqui 2 dias",
-    date: "02/04/2025",
-    read: false,
-  },
-  {
-    id: 3,
-    type: "entrega",
-    title: "Entrega Confirmada",
-    message: "Entrega recebida e confirmada",
-    date: "02/04/2025",
-    read: false,
-  },
-]);
+const notifications = ref([]);
 
 export function useNotifications() {
+  const { settings, notificationTypes } = useNotificationSettings();
+
   const unreadCount = computed(() => {
     return notifications.value.filter((n) => !n.read).length;
   });
@@ -49,7 +28,35 @@ export function useNotifications() {
     notifications.value = [];
   };
 
-  const getNotifications = () => notifications.value;
+  const fetchNotifications = async () => {
+    try {
+      const response = await api.get('http://localhost:8000/notificacoes/estoque', {
+        params: { limite_baixo: 10, limite_alto: 50 },
+      });
+      console.log('Resposta da API:', response.data);
+
+      const notificacoes = response.data.notificacoes;
+
+      if (!notificacoes) {
+        console.error("Resposta não contém 'notificacoes'");
+        return;
+      }
+
+      const lista = notificacoes.map((n) => ({
+        id: n.id,
+        title: n.title,
+        message: n.message,
+        type: n.type,
+        read: false,
+      }));
+
+      notifications.value = lista;
+
+    } catch (error) {
+      console.error("Erro ao buscar notificações:", error);
+    }
+  };
+
 
   return {
     notifications,
@@ -57,5 +64,6 @@ export function useNotifications() {
     markAllAsRead,
     clearAll,
     markAsRead,
+    fetchNotifications,
   };
 }

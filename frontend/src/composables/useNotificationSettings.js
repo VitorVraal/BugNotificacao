@@ -22,7 +22,7 @@ export function useNotificationSettings() {
   const saveSettings = async () => {
     try {
       // Aqui implementar o backend
-      await fetch('/api/notification-settings', {
+      await fetch('http://localhost:8000/notification-settings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
