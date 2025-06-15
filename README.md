@@ -177,6 +177,7 @@ port=3306
 sid=None
 VITE_API_URL=http://localhost:8000
 
+---
 
 ## 📦 Gerar Build de Produção
 
