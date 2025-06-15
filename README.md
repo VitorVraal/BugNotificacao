@@ -162,8 +162,6 @@ Esse script realiza automaticamente:
 
 ---
 
----
-
 ## 🔐 Configuração do Banco de Dados
 
 Antes de executar a aplicação, certifique-se de configurar corretamente o arquivo `.env` localizado na pasta `backend/database`.
