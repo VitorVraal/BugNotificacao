@@ -162,6 +162,24 @@ Esse script realiza automaticamente:
 
 ---
 
+---
+
+## 🔐 Configuração do Banco de Dados
+
+Antes de executar a aplicação, certifique-se de configurar corretamente o arquivo `.env` localizado na pasta `backend/database`.
+
+Abra o arquivo `.env` e **substitua a senha padrão pelo valor correto da sua instalação do MySQL**:
+
+```env
+user=root
+password=SuaSenhaAqui  # Altere para a senha real do seu MySQL
+host=localhost
+database=db
+port=3306
+sid=None
+VITE_API_URL=http://localhost:8000
+
+
 ## 📦 Gerar Build de Produção
 
 Se desejar gerar a versão de produção do frontend:
