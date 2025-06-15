@@ -1,45 +1,110 @@
-from database.db_mysql import MySqlConnector  # Ferramenta que realmente faz a conexão com o MySQL.
+from database.db_mysql import MySqlConnector
 from database.db_model import DBModel
 
-def VERIFICAR_NOTIFICACOES_ESTOQUE():
-    config = DBModel.get_dotenv()
-    db = MySqlConnector(config)
-    conn, msg = db.connection()
+# Adicione esta constante no início do arquivo
+VERIFICAR_NOTIFICACOES_ESTOQUE = """
+SELECT 
+    p.ID_PRODUTO,
+    p.NOME_PRODUTO,
+    e.QTDE_ESTOQUE,
+    p.QTD_MINIMA_PRODUTO,
+    p.VALIDADE_PRODUTO,
+    DATEDIFF(p.VALIDADE_PRODUTO, CURDATE()) AS DIAS_PARA_VENCER
+FROM PRODUTOS p
+JOIN ESTOQUE e ON p.FK_ID_ESTOQUE = e.ID_ESTOQUE
+WHERE e.QTDE_ESTOQUE <= p.QTD_MINIMA_PRODUTO
+OR DATEDIFF(p.VALIDADE_PRODUTO, CURDATE()) <= %s
+"""
+
+def get_notificacoes_estoque_controller(user_id, limite_baixo=10, dias_validade=3):
     try:
-        cursor = conn.cursor()
-        cursor.execute("SELECT NOME_PRODUTO FROM PRODUTOS")
-        nomes_produtos = cursor.fetchall()
+        config = DBModel.get_dotenv()
+        db = MySqlConnector(config)
+        connection, msg = db.connection()
 
-        lista_notificacoes = []
+        if not connection:
+            return False, f"Erro na conexão com o banco: {msg}"
 
-        for (nome_produto,) in nomes_produtos:
-            # Agora chama sem parâmetros extras, só o nome do produto
-            cursor.callproc("NOTIFICACAO_FALTA_PRODUTO", [nome_produto])
+        cursor = connection.cursor(dictionary=True)
 
-            for result in cursor.stored_results():
-                resultado = result.fetchone()
-                if resultado and resultado[0]:
-                    mensagem = resultado[0]
+        # Verificar notificações já lidas por este usuário
+        cursor.execute(
+            "SELECT ID_NOTIFICACAO FROM NOTIFICACOES_LIDAS WHERE ID_USUARIO = %s",
+            (user_id,)
+        )
+        lidas = {row['ID_NOTIFICACAO'] for row in cursor.fetchall()}
 
-                    tipo = "baixo-estoque"
-                    if "esgotado" in mensagem:
-                        tipo = "baixo-estoque"
-                    elif "normal" in mensagem:
-                        tipo = "estoque-ok"
-                    elif "ATENÇÃO" in mensagem or "ALERTA" in mensagem:
-                        tipo = "baixo-estoque"
+        # Buscar produtos com estoque baixo
+        cursor.callproc("LISTAR_PRODUTOS_ESTOQUE_BAIXO", [limite_baixo])
+        produtos_baixo_estoque = list(cursor.stored_results())[0].fetchall()
 
-                    lista_notificacoes.append({
-                        "id": nome_produto.lower().replace(" ", "_"),
-                        "title": f"Produto: {nome_produto}",
-                        "message": mensagem,
-                        "type": tipo,
-                        "read": False
-                    })
+        # Buscar produtos próximos da validade
+        cursor.callproc("LISTAR_PRODUTOS_PROXIMOS_VALIDADE", [dias_validade])
+        produtos_prox_validade = list(cursor.stored_results())[0].fetchall()
 
-        return (True, lista_notificacoes)
+        notificacoes = []
+
+        # Processar notificações de estoque baixo
+        for produto in produtos_baixo_estoque:
+            notif_id = f"estoque_{produto['ID_PRODUTO']}"
+            if notif_id not in lidas:
+                notificacoes.append({
+                    "id": notif_id,
+                    "title": "Estoque Baixo",
+                    "message": f"Produto {produto['NOME_PRODUTO']} está com estoque baixo ({produto['QTDE_ESTOQUE']} unidades)",
+                    "type": "baixo-estoque"
+                })
+
+        # Processar notificações de validade
+        for produto in produtos_prox_validade:
+            notif_id = f"validade_{produto['ID_PRODUTO']}"
+            if notif_id not in lidas:
+                notificacoes.append({
+                    "id": notif_id,
+                    "title": "Validade Próxima",
+                    "message": f"Produto {produto['NOME_PRODUTO']} vence em {produto['DIAS_PARA_VENCER']} dias ({produto['VALIDADE_PRODUTO']})",
+                    "type": "validade"
+                })
+
+        return True, notificacoes
 
     except Exception as e:
-        return (False, str(e))
+        return False, str(e)
+    finally:
+        if 'connection' in locals() and connection:
+            connection.close()
 
+def marcar_como_lida_controller(user_id, notificacao_id, produto_id):
+    try:
+        config = DBModel.get_dotenv()
+        db = MySqlConnector(config)
+        connection, msg = db.connection()
 
+        if not connection:
+            return False, f"Erro na conexão com o banco: {msg}"
+
+        cursor = connection.cursor()
+
+        # Verificar se o produto existe
+        cursor.execute("SELECT ID_PRODUTO FROM PRODUTOS WHERE ID_PRODUTO = %s", (produto_id,))
+        if not cursor.fetchone():
+            return False, "Produto não encontrado"
+
+        # Verificar se a notificação é válida
+        if not (notificacao_id.startswith("estoque_") or notificacao_id.startswith("validade_")):
+            return False, "Tipo de notificação inválido"
+
+        # Marcar como lida
+        cursor.execute(
+            "INSERT INTO NOTIFICACOES_LIDAS (ID_NOTIFICACAO, ID_USUARIO) VALUES (%s, %s) "
+            "ON DUPLICATE KEY UPDATE DATA_LEITURA = CURRENT_TIMESTAMP",
+            (notificacao_id, user_id)
+        )
+        connection.commit()
+        return True, "Notificação marcada como lida"
+
+    except Exception as e:
+        return False, str(e)
+    finally:
+        if 'connection' in locals() and connection:
+            connection.close()

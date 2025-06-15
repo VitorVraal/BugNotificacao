@@ -20,10 +20,11 @@ app.add_middleware(SessionMiddleware, secret_key="g464g6f84gg84x64gfdxgg8h486h46
 # Middleware CORS para liberar requisições do frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"]
 )
 
 # Tratamento de erro de validação

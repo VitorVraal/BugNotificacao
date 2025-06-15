@@ -1,7 +1,45 @@
 import asyncio
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from typing import List
+import json
 
 router = APIRouter()
+
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections = []
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        self.active_connections.remove(websocket)
+
+    async def send_personal_message(self, message: str, websocket: WebSocket):
+        await websocket.send_text(message)
+
+    async def broadcast(self, message: str):
+        for connection in self.active_connections:
+            await connection.send_text(message)
+
+manager = ConnectionManager()
+
+@router.websocket("/ws/notifications")
+async def websocket_endpoint(websocket: WebSocket):
+    await manager.connect(websocket)
+    try:
+        while True:
+            await websocket.send_json({
+                "type": "NOTIFICATION_STATS_UPDATE",
+                "unreadCount": 5,
+                "scheduledToday": 1,
+                "scheduledThisWeek": 4
+            })
+            await asyncio.sleep(30)
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+        print("🔌 WebSocket desconectado.")
 
 @router.websocket("/ws/dashboard")
 async def websocket_dashboard(websocket: WebSocket):

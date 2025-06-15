@@ -168,9 +168,7 @@
                                 item.status === 'Em Estoque' &&
                                 !checkExpiryStatus(item.expiryDate),
                               'bg-red-100 text-red-700': item.status === 'Baixo Estoque',
-                              'bg-orange-100 text-orange-700': checkExpiryStatus(
-                                item.expiryDate
-                              ),
+                              'bg-orange-100 text-orange-700': checkExpiryStatus(item.expiryDate),
                             }"
                           >
                             {{ item.status }}
@@ -396,10 +394,11 @@ async function loadData() {
     categories.value = [...new Set(inventory.value.map(item => item.category))];
 
     // Calcula estatísticas usando a API configurada
-    stockStats.value = {
+stockStats.value = {
       totalProducts: inventory.value.length,
       lowStockCount: inventory.value.filter(item => item.quantity < item.minQuantity).length,
-      updateCount: updateCount.value
+      updateCount: updateCount.value,
+      expiringSoonCount: inventory.value.filter(item => checkExpiryStatus(item.expiryDate)).length
     };
     
   } catch (error) {
@@ -598,10 +597,17 @@ const checkExpiryStatus = (expiryDate) => {
   if (!expiryDate) return false;
   
   const today = new Date();
-  const expiry = new Date(expiryDate.split('/').reverse().join('-'));
+  today.setHours(0, 0, 0, 0);
+  
+  // Converte a data de validade para objeto Date
+  const [day, month, year] = expiryDate.split('/');
+  const expiry = new Date(`${year}-${month}-${day}`);
+  expiry.setHours(0, 0, 0, 0);
+  
   const diffTime = expiry - today;
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  return diffDays <= 7;
+  
+  return diffDays <= 3 && diffDays >= 0; // Só considera se faltar até 3 dias e não estiver expirado
 };
 
 const handlePageChange = (page) => {

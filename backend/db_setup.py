@@ -103,6 +103,17 @@ def criar_tabelas():
         );               
         ''')
 
+        #tabela de pedido entrega
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS NOTIFICACOES_LIDAS (
+            ID_NOTIFICACAO VARCHAR(255) NOT NULL,
+            ID_USUARIO INT NOT NULL,
+            DATA_LEITURA TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (ID_NOTIFICACAO, ID_USUARIO),
+            FOREIGN KEY (ID_USUARIO) REFERENCES USUARIO(ID_USUARIO)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;           
+        ''')
+
         # Procedure de cadastrar usuário
         cursor.execute('''
         CREATE PROCEDURE CADASTRAR_USUARIO(
@@ -452,35 +463,43 @@ def criar_tabelas():
         
         #procedure de notificação de falta de produto
         cursor.execute('''
-        CREATE PROCEDURE NOTIFICACAO_FALTA_PRODUTO(
-            IN P_NOME_PRODUTO VARCHAR(255)
-        )
+        CREATE PROCEDURE LISTAR_PRODUTOS_ESTOQUE_BAIXO(IN limite_minimo INT)
         BEGIN
-            DECLARE V_QTDE_ESTOQUE INT;
-            DECLARE V_QTDE_MINIMA INT;
+            SELECT 
+                p.ID_PRODUTO,
+                p.NOME_PRODUTO,
+                e.QTDE_ESTOQUE,
+                p.QTD_MINIMA_PRODUTO
+            FROM PRODUTOS p
+            JOIN ESTOQUE e ON p.FK_ID_ESTOQUE = e.ID_ESTOQUE
+            WHERE e.QTDE_ESTOQUE <= p.QTD_MINIMA_PRODUTO
+            OR e.QTDE_ESTOQUE <= limite_minimo;
+        END;
+        ''')    
 
-            -- Busca a quantidade atual e a mínima do produto
-            SELECT E.QTDE_ESTOQUE, P.QTD_MINIMA_PRODUTO
-            INTO V_QTDE_ESTOQUE, V_QTDE_MINIMA
-            FROM PRODUTOS P
-            JOIN ESTOQUE E ON P.FK_ID_ESTOQUE = E.ID_ESTOQUE
-            WHERE P.NOME_PRODUTO = P_NOME_PRODUTO;
+        #procedure de notificação de validade perto de expirar
+        cursor.execute('''
+        CREATE PROCEDURE LISTAR_PRODUTOS_PROXIMOS_VALIDADE(IN dias_alerta INT)
+        BEGIN
+            SELECT 
+                p.ID_PRODUTO,
+                p.NOME_PRODUTO,
+                p.VALIDADE_PRODUTO,
+                DATEDIFF(p.VALIDADE_PRODUTO, CURDATE()) AS DIAS_PARA_VENCER
+            FROM PRODUTOS p
+            WHERE p.VALIDADE_PRODUTO IS NOT NULL
+            AND DATEDIFF(p.VALIDADE_PRODUTO, CURDATE()) BETWEEN 0 AND dias_alerta;
+        END;
+        ''') 
 
-            -- Verificações
-            IF V_QTDE_ESTOQUE IS NULL THEN
-                SELECT CONCAT('Produto "', P_NOME_PRODUTO, '" não encontrado no estoque.') AS Notificação;
-
-            ELSEIF V_QTDE_ESTOQUE = 0 THEN
-                SELECT CONCAT('ALERTA: Produto "', P_NOME_PRODUTO, '" está esgotado!') AS Notificação;
-
-            ELSEIF V_QTDE_ESTOQUE <= V_QTDE_MINIMA THEN
-                SELECT CONCAT('ATENÇÃO: Produto "', P_NOME_PRODUTO, '" com estoque baixo (', V_QTDE_ESTOQUE, ' unidades).') AS Notificação;
-
-            ELSE
-                SELECT CONCAT('Produto "', P_NOME_PRODUTO, '" com estoque normal (', V_QTDE_ESTOQUE, ' unidades).') AS Notificação;
-            END IF;
+        #procedure para limpar notificações antigas
+        cursor.execute('''
+        CREATE PROCEDURE LIMPAR_NOTIFICACOES_ANTIGAS()
+        BEGIN
+            DELETE FROM NOTIFICACOES_LIDAS 
+            WHERE DATA_LEITURA < DATE_SUB(NOW(), INTERVAL 30 DAY);
         END
-        ''')               
+        ''') 
         
         # ADICIONAR OUTRAS PROCEDURES AQUI
         connection.commit()

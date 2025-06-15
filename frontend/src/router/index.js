@@ -49,12 +49,6 @@ const routes = [
         meta: { title: "Checkout" },
       },
       {
-        path: "/entregas",
-        name: "entregas",
-        component: () => import("@/pages/Entregas.vue"),
-        meta: { title: "Entregas" },
-      },
-      {
         path: "/notificacoes",
         name: "notificacoes",
         component: () => import("@/pages/Notificacoes.vue"),

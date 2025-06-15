@@ -7,10 +7,10 @@ export function useNotificationSettings() {
     { id: 'validade', name: 'Alerta Validade', enabled: true },
   ])
 
-  const settings = ref({
-    minStockLimit: '10',
-    expiryAlertDays: '3'
-  })
+const settings = ref({
+  minStockLimit: '10', // porcentagem ou quantidade fixa
+  expiryAlertDays: '3' // dias para alerta de validade
+})
 
   const updateNotificationType = (typeId, enabled) => {
     const type = notificationTypes.value.find(t => t.id === typeId)
