@@ -1,5 +1,5 @@
 
-# 📦 Sistema de Gerenciamento Fullstack
+# 📦 Sistema de Gerenciamento de Estoque Fullstack
 
 Projeto completo com frontend em Vue.js e backend em FastAPI, com integração a banco de dados MySQL, autenticação via JWT e comunicação em tempo real via WebSocket.
 
