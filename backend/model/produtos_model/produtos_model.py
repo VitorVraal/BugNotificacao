@@ -1,37 +1,63 @@
-from database.db_mysql import MySqlConnector
-from database.db_model import DBModel
-from mysql.connector import Error
-from pydantic import BaseModel, ValidationError
-from typing import Optional, Protocol
+from database.db_mysql import MySqlConnector  # Ferramenta que realmente faz a conexão com o MySQL.
+from database.db_model import DBModel # Modelo que guarda as informações de conexão do banco.
+from mysql.connector import Error # Para pegar e lidar com erros do MySQL.
+# from pydantic import BaseModel, ValidationError
+from typing import Optional, Protocol  # Para indicar que um valor pode ser opcional ou definir "contratos" (interfaces).
+
+# Importa funções para ler PDFs e e-mails (extrair dados de notas fiscais).
 from model.produtos_model.modules_produtos_model.pdf_reader import read_pdf
 from model.produtos_model.modules_produtos_model.email_data_extractor import read_email_data, baixar_anexos_pdf
 
-def CADASTRAR_PRODUTO_ESTOQUE(NOME_PRODUTO, CATEGORIA_ESTOQUE, DESC_PRODUTO, QTDE_ESTOQUE, 
-                              PRECO_PRODUTO, QTD_MINIMA_PRODUTO, VALIDADE_PRODUTO, NUMERO_NF_PRODUTO, 
-                              FORNECEDOR_PRODUTO):
+def CADASTRAR_PRODUTO_ESTOQUE(
+    NOME_PRODUTO, 
+    CATEGORIA_ESTOQUE, 
+    DESC_PRODUTO, 
+    QTDE_ESTOQUE, 
+    PRECO_PRODUTO,
+    QTD_MINIMA_PRODUTO, 
+    VALIDADE_PRODUTO, 
+    NUMERO_NF_PRODUTO, 
+    FORNECEDOR_PRODUTO
+    ):
+    """
+    Cadastra um novo produto no estoque do banco de dados.
+    Ele usa um procedimento armazenado no MySQL para fazer o registro.
+    Parâmetros:
+    Todos os parâmetros são as informações detalhadas do produto (nome, categoria, descrição, quantidade, preço, etc.).
+    """
     try:
-        qtde_estoque_int = int(QTDE_ESTOQUE)
+        qtde_estoque_int = int(QTDE_ESTOQUE) # Tenta converter a quantidade para número.
     except ValueError:
         print(f"Valor inválido para QTDE_ESTOQUE: {QTDE_ESTOQUE}")
         return False, 'QTDE_ESTOQUE inválido'    
     
-    config = DBModel.get_dotenv()
-    db = MySqlConnector(config)
-    conn, msg = db.connection()
+    """
+    Pega as configurações do banco de um arquivo .env 
+    Usando o método "get.dotenv" da classe localizada no arquivo "db_model" da pasta "database/db_model.py".
+    """
+    config = DBModel.get_dotenv() 
+    db = MySqlConnector(config) # Cria um objeto para conectar ao MySQL.
+    conn, msg = db.connection()  # Tenta fazer a conexão.
     try:
-        cursor = conn.cursor()
+        cursor = conn.cursor()  # Prepara o "cursor" para enviar comandos SQL.
+
+        # Chama um "procedimento de inserção"(procedure) no banco para cadastrar o produto.
         command = "CALL CADASTRAR_PRODUTO_ESTOQUE(%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+
+        #valores a serem aplicados nos locais "%s" ao chamar a procedure
         values = (NOME_PRODUTO, CATEGORIA_ESTOQUE, DESC_PRODUTO, QTDE_ESTOQUE, 
                               PRECO_PRODUTO, QTD_MINIMA_PRODUTO, VALIDADE_PRODUTO, NUMERO_NF_PRODUTO, 
                               FORNECEDOR_PRODUTO)
         print("Valores enviados para procedure:", values)
-        cursor.execute(command, values)
-        conn.commit()
-        return True, 'sucesso'
+        cursor.execute(command, values) # Executa o comando.
+        conn.commit() # Salva as mudanças no banco.
+        return True, 'sucesso' # Retorna True e um menssagem de sucesso.
     except Exception as e:
+        #Caso houver algum erro durante o cadastro
         print(f"Erro ao inserir produto: {e}")
-        return False, 'fracassado'
+        return False, 'fracassado'#devolve False e uma menssagem de fracasso
     finally:
+        # Garante que o cursor e a conexão sejam fechados no final, evitando vazamentos.
         if cursor:
             cursor.close()
         if db:
@@ -39,38 +65,44 @@ def CADASTRAR_PRODUTO_ESTOQUE(NOME_PRODUTO, CATEGORIA_ESTOQUE, DESC_PRODUTO, QTD
 
 
 def LISTAR_PRODUTOS():
-    config = DBModel.get_dotenv()
-    db = MySqlConnector(config)
-    conn, msg = db.connection()
+    """
+    Busca e retorna a lista de todos os produtos cadastrados no banco de dados.
+    """
+    config = DBModel.get_dotenv() # Pega as configurações do banco
+    db = MySqlConnector(config) # Cria o conector MySQL.
+    conn, msg = db.connection() # Conecta ao banco.
     try:
-        cursor = conn.cursor(dictionary=True)
-        cursor.callproc("LISTAR_PRODUTOS")   
+        cursor = conn.cursor(dictionary=True) # Prepara o cursor para retornar resultados como dicionários.
+        cursor.callproc("LISTAR_PRODUTOS") # Chama a procedure que lista os produtos.
         produtos = []
-        for result in cursor.stored_results():
-            produtos.extend(result.fetchall())
+        for result in cursor.stored_results(): # Pega os resultados do procedimento.
+            produtos.extend(result.fetchall()) # Adiciona todos os produtos encontrados à lista
 
-        cursor.close()
-        conn.close()
-        return produtos
+        cursor.close() # Fecha o cursor.
+        conn.close() # Fecha a conexão.
+        return produtos # Retorna a lista de produtos.
     except Error as error:
         print(f"Erro ao listar produtos: {error}")
-        return []
-# print(LISTAR_PRODUTOS())
+        return [] # Retorna uma lista vazia se houver erro.
 
 def PROCURAR_PRODUTO_NOME(NOME_PRODUTO):
-    config = DBModel.get_dotenv()
-    db = MySqlConnector(config)
-    conn, msg = db.connection()
+    """
+    Procura produtos no banco de dados pelo nome.
+    """
+    config = DBModel.get_dotenv() # Pega as configurações do banco
+    db = MySqlConnector(config) # Cria o conector MySQL.
+    conn, msg = db.connection() # Conecta ao banco.
     try:
         cursor = conn.cursor()
+        # Chama o procedure para procurar produto por nome.
         command = "CALL PROCURAR_PRODUTO_NOME(%s)"
         values = (NOME_PRODUTO,)
         cursor.execute(command, values)
         resultados = cursor.fetchall()
-        return True, resultados
+        return True, resultados # Retorna sucesso e os resultados
     except Exception as e:
         return False, f"Erro ao procurar produto por nome: {e}"
-    finally:
+    finally: 
         if cursor:
             cursor.close()
         if db:
@@ -85,15 +117,21 @@ def ATUALIZAR_PRODUTO(
     p_validade_produto_upd=None, p_fornecedor_produto_upd=None,
     p_qtd_minima_produto_upd=None
 ):
-    config = DBModel.get_dotenv()
-    db = MySqlConnector(config)
-    conn, msg = db.connection()
+    """
+    Atualiza as informações de um produto ou de seu estoque no banco de dados.
+    Você passa apenas os campos que quer atualizar.
+    """
+    config = DBModel.get_dotenv() # Pega as configurações do banco
+    db = MySqlConnector(config) # Cria o conector MySQL.
+    conn, msg = db.connection() # Conecta ao banco.
     if conn is None:
         print(f"Erro de conexão: {msg}")
         return False, f"Falha na conexão: {msg}"
     try:
         cursor = conn.cursor()
+        # Chama a procedure para atualizar produto/estoque.
         command = "CALL ATUALIZAR_ESTOQUE_PRODUTO(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        # Todos os parâmetros para a procedure (muitos podem ser None se não forem atualizados).
         values = (
             p_id_estoque_upd,
             p_categoria_estoque_upd,
@@ -109,11 +147,12 @@ def ATUALIZAR_PRODUTO(
         )
         cursor.execute(command, values)
         conn.commit()
-        return True, 'sucesso'
+        return True, 'sucesso' #retorna True(Verdadeiro) se tiver sucesso ao aplicar atualização
     except Exception as e:
         print(f"Erro ao atualizar produto: {e}")
         return False, 'fracassado'
     finally:
+        # Garante que o cursor e a conexão sejam fechados.
         if cursor:
             cursor.close()
         if conn:
@@ -143,21 +182,26 @@ def ATUALIZAR_PRODUTO(
 
 
 def EXCLUIR_PRODUTO_GERAL(ID_ESTOQUE):
-    config = DBModel.get_dotenv()
-    db = MySqlConnector(config)
-    conn, msg = db.connection()
+    """
+    Exclui um registro de estoque e os produtos relacionados a ele no banco de dados.
+    """
+    config = DBModel.get_dotenv() # Pega as configurações do banco
+    db = MySqlConnector(config) # Cria o conector MySQL.
+    conn, msg = db.connection() # Conecta ao banco.
     try:
         cursor = conn.cursor()
+        # Chama a procedure para excluir estoque e produtos.
         command = "CALL EXCLUIR_ESTOQUE_PRODUTOS(%s)"
         values = (ID_ESTOQUE,)
         cursor.execute(command, values)
         conn.commit()
         print(f"ESTOQUE '{ID_ESTOQUE}' excluído com sucesso")
-        return True, 'ESTOQUE excluído'
+        return True, 'ESTOQUE excluído' #retorna True(Verdadeiro) se tiver sucesso ao aplicar o processo de exclusão
     except Exception as e:
         print(f"Erro ao remover ESTOQUE: {e}")
         return False, str(e)
     finally:
+        # Garante que o cursor e a conexão sejam fechados.
         if cursor:
             cursor.close()
         if conn:
@@ -166,10 +210,16 @@ def EXCLUIR_PRODUTO_GERAL(ID_ESTOQUE):
 
 
 def coleta_de_dados_email():
+    """
+    Tenta ler dados de e-mails e anexos PDF (provavelmente notas fiscais)
+    e, se conseguir, cadastra as informações do produto no estoque.
+    """
     try:
         if read_email_data():
+            # Se ler, extrai informações do PDF (emitente, produto, preço, NF, etc.).
             emitente, nome_produto, tipo_produto, descricao_produto, qtde_produto, preco_produto_float, numero_nota = read_pdf()
             try:
+                # Tenta cadastrar o produto usando as informações extraídas.
                 CADASTRAR_PRODUTO_ESTOQUE(nome_produto, preco_produto_float, descricao_produto, tipo_produto, qtde_produto, numero_nota )
             except Error as err:
                 print(f'{err}')
@@ -179,18 +229,23 @@ def coleta_de_dados_email():
         print("erro ao buscar no email")
         
 def diminuir_estoque(produto_id: int, quantidade: int):
-    config = DBModel.get_dotenv()
-    db = MySqlConnector(config)
-    conn, msg = db.connection()
+    """
+    Diminui a quantidade de um produto específico no estoque.
+    """
+    config = DBModel.get_dotenv() # Pega as configurações do banco
+    db = MySqlConnector(config) # Cria o conector MySQL.
+    conn, msg = db.connection() # Conecta ao banco.
     try:
         cursor = conn.cursor()
+        # Comando SQL simples para diminuir a quantidade no estoque (forma direta de aplicar alterações do CRUD).
         command = "UPDATE ESTOQUE SET QTDE_ESTOQUE = QTDE_ESTOQUE - %s WHERE ID_ESTOQUE = (SELECT FK_ID_ESTOQUE FROM PRODUTOS WHERE ID_PRODUTO = %s)"
         cursor.execute(command, (quantidade, produto_id))
-        conn.commit()
-        return True, "Estoque atualizado"
+        conn.commit() 
+        return True, "Estoque atualizado" # Retorna sucesso.
     except Exception as e:
-        return False, f"Erro ao atualizar estoque: {e}"
-    finally:
+        return False, f"Erro ao atualizar estoque: {e}" # Retorna falha e o erro.
+    finally: 
+        # Garante que o cursor e a conexão sejam fechados.
         cursor.close()
         conn.close()
 
