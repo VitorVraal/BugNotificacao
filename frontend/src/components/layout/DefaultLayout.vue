@@ -42,7 +42,7 @@
 import { ref } from "vue";
 import Sidebar from "@/components/layout/Sidebar.vue";
 import Navbar from "@/components/layout/Navbar.vue";
-import HamburgerButton from "@/components/ui/HamburgerButton.vue";
+import HamburgerButton from "@/components/Layout/HamburgerButton.vue";
 
 const isSidebarOpen = ref(false);
 

@@ -3,8 +3,14 @@
     <div class="bg-white p-6 sm:p-8 rounded-lg shadow-lg w-full max-w-md mx-auto">
       <div class="flex justify-center mb-6 sm:mb-8">
         <div class="flex items-center">
-          <CubeIcon class="h-6 w-6 sm:h-8 sm:w-8 mr-2 sm:mr-3 text-purple-500" />
-          <h1 class="text-xl sm:text-2xl font-bold text-gray-800">Mini Mercado Ideal</h1>
+          <img
+            src="@/assets/logo.svg"
+            alt="Logo"
+            class="h-16 w-16 sm:h-20 sm:w-20 mr-4 black-logo"
+          />
+          <h1 class="text-xl sm:text-2xl font-bold text-gray-800">
+            Mini Mercado Ideal
+          </h1>
         </div>
       </div>
 
@@ -80,7 +86,7 @@
 <script setup>
 import { ref } from "vue";
 import { useRouter } from "vue-router";
-import { CubeIcon, MailIcon, LockClosedIcon, CheckCircleIcon } from "@heroicons/vue/outline";
+import { MailIcon, LockClosedIcon, CheckCircleIcon } from "@heroicons/vue/outline";
 import BaseInput from "@/components/ui/Login/BaseInput.vue";
 import BaseButton from "@/components/ui/Login/BaseButton.vue";
 import { useAuth } from "@/composables/useAuth";
@@ -138,3 +144,9 @@ const handleSubmit = async () => {
   }
 };
 </script>
+
+<style scoped>
+.black-logo {
+  filter: brightness(0) saturate(100%);
+}
+</style>

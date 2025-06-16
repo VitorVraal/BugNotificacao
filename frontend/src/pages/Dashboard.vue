@@ -1,5 +1,5 @@
 <template>
-  <div class="p-6">
+  <div class="p-6 dashboard-container" :class="{ 'fade-in': mounted }">
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       <SummaryCard
         title="Total de Produtos"
