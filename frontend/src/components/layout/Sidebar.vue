@@ -15,7 +15,6 @@
         <SidebarLink to="/produtos" icon="CubeIcon" text="Produtos" />
         <SidebarLink to="/estoque" icon="CollectionIcon" text="Estoque" />
         <SidebarLink to="/checkout" icon="ShoppingCartIcon" text="Checkout" />
-        <SidebarLink to="/entregas" icon="TruckIcon" text="Entregas" />
         <SidebarLink to="/notificacoes" icon="BellIcon" text="Notificações" />
       </nav>
     </div>

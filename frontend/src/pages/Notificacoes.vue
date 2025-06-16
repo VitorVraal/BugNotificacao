@@ -1,48 +1,6 @@
 <template>
   <div class="container mx-auto px-4 py-6">
     <!-- Cards estatísticos -->
-    <div
-      class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8"
-    >
-      <div
-        class="bg-blue-100 p-4 sm:p-6 rounded-2xl flex justify-between items-center"
-      >
-        <div>
-          <h3 class="text-sm sm:text-base font-semibold">
-            Notificações Não Lidas
-          </h3>
-          <p class="text-xl sm:text-2xl font-bold">{{ stats.unreadCount }}</p>
-        </div>
-        <TruckIcon class="h-6 w-6 sm:h-8 sm:w-8" />
-      </div>
-
-      <div
-        class="bg-green-100 p-4 sm:p-6 rounded-2xl flex justify-between items-center"
-      >
-        <div>
-          <h3 class="text-sm sm:text-base font-semibold">
-            Previstas para Hoje
-          </h3>
-          <p class="text-xl sm:text-2xl font-bold">
-            {{ stats.scheduledToday }}
-          </p>
-        </div>
-        <CalendarIcon class="h-6 w-6 sm:h-8 sm:w-8" />
-      </div>
-
-      <div
-        class="bg-purple-100 p-4 sm:p-6 rounded-2xl flex justify-between items-center"
-      >
-        <div>
-          <h3 class="text-sm sm:text-base font-semibold">
-            Entregas nessa Semana
-          </h3>
-          <p class="text-xl sm:text-2xl font-bold">
-            {{ stats.scheduledThisWeek }}
-          </p>
-        </div>
-        <CubeIcon class="h-6 w-6 sm:h-8 sm:w-8" />
-      </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -151,85 +109,7 @@
           </div>
         </div>
       </div>
-
-      <!-- Configuração das Notificações -->
-      <div class="bg-white rounded-xl shadow p-4 sm:p-6 h-fit">
-        <div class="mb-4 sm:mb-6">
-          <h3 class="text-base sm:text-lg font-semibold">
-            Configuração das Notificações
-          </h3>
         </div>
-
-        <div class="space-y-4 sm:space-y-6">
-          <!-- Tipos de notificações -->
-          <div>
-            <h4 class="font-medium mb-3 sm:mb-4">Tipos de notificações</h4>
-            <div class="space-y-3 sm:space-y-4">
-              <div
-                v-for="type in notificationTypes"
-                :key="type.id"
-                class="flex items-center justify-between"
-              >
-                <span class="text-sm sm:text-base text-gray-700">{{ type.name }}</span>
-                <button
-                  class="w-10 sm:w-12 h-5 sm:h-6 rounded-full p-1 transition-colors duration-200 ease-in-out"
-                  :class="type.enabled ? 'bg-purple-600' : 'bg-gray-200'"
-                  @click="updateNotificationType(type.id, !type.enabled)"
-                >
-                  <div
-                    class="w-3 sm:w-4 h-3 sm:h-4 rounded-full bg-white transition-transform duration-200 ease-in-out"
-                    :class="type.enabled ? 'transform translate-x-5 sm:translate-x-6' : ''"
-                  ></div>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Configuração de Validade/Baixo Estoque -->
-          <div>
-            <h4 class="font-medium mb-3 sm:mb-4">
-              Configuração de Validade/Baixo Estoque
-            </h4>
-            <div class="space-y-3 sm:space-y-4">
-              <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                <span class="text-sm sm:text-base text-gray-700">
-                  Limite Mínimo de Estoque
-                </span>
-                <select
-                  v-model="settings.minStockLimit"
-                  class="border rounded-md px-2 py-1 text-sm sm:text-base"
-                >
-                  <option value="10">10%</option>
-                  <option value="15">15%</option>
-                  <option value="25">25%</option>
-                </select>
-              </div>
-              <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                <span class="text-sm sm:text-base text-gray-700">
-                  Alerta de validade
-                </span>
-                <select
-                  v-model="settings.expiryAlertDays"
-                  class="border rounded-md px-2 py-1 text-sm sm:text-base"
-                >
-                  <option value="3">3 dias</option>
-                  <option value="5">5 dias</option>
-                  <option value="7">7 dias</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <button
-            @click="handleSaveSettings"
-            class="w-full bg-purple-500 text-white py-2 rounded-lg hover:bg-purple-600 text-sm sm:text-base"
-          >
-            Salvar
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
 </template>
 
 <script setup>
@@ -264,7 +144,6 @@ const currentFilter = ref("all");
 const filters = [
   { name: "Tudo", value: "all" },
   { name: "Baixo Estoque", value: "baixo-estoque" },
-  { name: "Entregas", value: "entrega" },
   { name: "Validade", value: "validade" },
 ];
 

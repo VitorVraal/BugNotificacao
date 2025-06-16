@@ -92,15 +92,13 @@ def criar_tabelas():
         
         #tabela de pedido entrega
         cursor.execute('''
-        create table IF NOT EXISTS PEDIDO_ENTREGA (
-	    id_entrega int auto_increment primary key not null,
-	    status_entrega boolean default FALSE,
-        fk_id_produto int, 
-        fk_ID_MOVIMENTACAO int, 
-        foreign key (fk_id_produto) references PRODUTOS(ID_PRODUTO),
-        foreign key (fk_ID_MOVIMENTACAO) references MOVIMENTACAO(ID_MOVIMENTACAO)
-    
-        );               
+        CREATE TABLE atividades (
+        ID INT AUTO_INCREMENT PRIMARY KEY,
+        TIPO VARCHAR(50) NOT NULL,
+        DESCRICAO TEXT NOT NULL,
+        QUANTIDADE INT DEFAULT 0,
+        DATA_HORA DATETIME DEFAULT CURRENT_TIMESTAMP
+        );         
         ''')
 
         #tabela de pedido entrega

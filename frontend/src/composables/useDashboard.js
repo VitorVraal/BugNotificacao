@@ -15,28 +15,43 @@ export function useDashboard() {
 const fetchDashboardStats = async () => {
   try {
     const response = await fetch("http://localhost:8000/api/dashboard/stats");
-    if (!response.ok) {
-      throw new Error(`HTTP error: ${response.status}`);
-    }
     const data = await response.json();
-    updateStats(data);
+
+    if (!response.ok || data.success === false || !data.data) {
+      console.error("Erro no backend:", data.message || "Resposta inesperada do servidor");
+      return;
+    }
+
+
+    updateStats(data.data);
   } catch (error) {
-    console.error("Erro ao buscar estatísticas:", error);
+    console.error("Erro na requisição:", error);
   }
 };
 
-  const updateStats = (data) => {
+
+
+
+
+  const updateStats = (response) => {
+    const stats = response.data || response;
+
+    if (!stats) {
+      console.error("Dados de estatística ausentes");
+      return;
+    }
+
     dashboardStats.value = {
-      totalProducts: data.totalProducts,
-      lowStockProducts: data.lowStockProducts,
-      pendingDeliveries: data.pendingDeliveries,
-      productOutput: data.productOutput,
-      totalProductsTrend: data.totalProductsTrend,
-      lowStockProductsTrend: data.lowStockProductsTrend,
-      pendingDeliveriesTrend: data.pendingDeliveriesTrend,
-      productOutputTrend: data.productOutputTrend,
+      totalProducts: stats.total_produtos || 0,
+      lowStockProducts: stats.produtos_baixo_estoque || 0,
+      productOutput: stats.saida_produtos || 0,
+      totalProductsTrend: stats.total_produtos_trend || "",
+      lowStockProductsTrend: stats.produtos_baixo_estoque_trend || "",
+      pendingDeliveriesTrend: stats.entregas_pendentes_trend || "",
+      productOutputTrend: stats.saida_produtos_trend || ""
     };
   };
+
 
   // Conexão WebSocket para atualização em tempo real WebSocket
   let ws = null;
@@ -46,8 +61,8 @@ const fetchDashboardStats = async () => {
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      if (data.type === "DASHBOARD_STATS_UPDATE") {
-        updateStats(data);
+      if (data.type === "DASHBOARD_STATS_UPDATE" && data.data) {
+        updateStats({ success: true, data: data.data });
       }
     };
 

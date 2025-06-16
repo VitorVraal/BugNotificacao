@@ -7,6 +7,7 @@ from router.usuarios_router import router as usuario_router
 from router.produto_route import router as produto_router
 from router.ws_router import router as ws_router
 from router.notificacao_router import router as notificacao_router
+from router.dashboard_router import router as dashboard_router
 from database.db_model import DBModel
 from db_setup import criar_banco_de_dados, criar_tabelas
 from controller.produtos_controller.produtos_controller import iniciar_coleta_email_controller
@@ -54,6 +55,7 @@ app.include_router(usuario_router, tags=["Usuários"])
 app.include_router(produto_router, tags=["Produtos"])
 app.include_router(ws_router)
 app.include_router(notificacao_router, tags=["Notificações"])
+app.include_router(dashboard_router, tags=["Dashboard"])
 
 # Tarefa periódica para verificar e-mails
 async def tarefa_periodica_email():

@@ -148,29 +148,26 @@
       <div class="space-y-4 sm:space-y-6">
         <div class="bg-white rounded-xl shadow p-4 sm:p-6">
           <h2 class="text-lg font-semibold mb-4 sm:mb-6">Registro Automatizado de Produto</h2>
-          
-          <form @submit.prevent="handleAutomatedRegister" class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">
-                Link da Nota Fiscal
-              </label>
-              <input
-                v-model="automatedForm.invoiceLink"
-                type="text"
-                class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-300 focus:outline-none text-sm sm:text-base"
-                required
-              />
-            </div>
 
-            <div class="flex justify-end">
+            <div class="flex">
               <button
                 type="submit"
                 class="w-full sm:w-auto px-4 py-2 text-white bg-purple-500 rounded-lg hover:bg-purple-600 text-sm sm:text-base"
               >
-                Registrar Produto
+                Fazer Busca no Email
               </button>
             </div>
-          </form>
+
+            <br>
+
+            <div class="flex">
+              <button
+                type="submit"
+                class="w-full sm:w-auto px-4 py-2 text-white bg-purple-500 rounded-lg hover:bg-purple-600 text-sm sm:text-base"
+              >
+                Inserir Produtos no Estoque
+              </button>
+            </div>
         </div>
 
         <!-- "Como funciona" -->
@@ -181,19 +178,19 @@
               <div class="flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 mr-3">
                 <span class="text-sm sm:text-base">1</span>
               </div>
-              <p class="text-sm sm:text-base">Coloque o Link da Nota Fiscal e clique em Registrar Produto</p>
+              <p class="text-sm sm:text-base">Clique no botão 'Fazer Busca no Email'</p>
             </li>
             <li class="flex items-start">
               <div class="flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 mr-3">
                 <span class="text-sm sm:text-base">2</span>
               </div>
-              <p class="text-sm sm:text-base">O sistema automaticamente extrai os produtos do Link da Nota Fiscal</p>
+              <p class="text-sm sm:text-base">O sistema automaticamente filtra seu email para encontrar possíveis Notas Fiscais</p>
             </li>
             <li class="flex items-start">
               <div class="flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 mr-3">
                 <span class="text-sm sm:text-base">3</span>
               </div>
-              <p class="text-sm sm:text-base">Os produtos ficam marcados como "Entrega Pendente" até a confirmação da entrega</p>
+              <p class="text-sm sm:text-base">Caso tenham, clicando no botão 'Inserir Produtos no Estoque' eles são cadastrados automaticamentte no sistema</p>
             </li>
           </ul>
         </div>

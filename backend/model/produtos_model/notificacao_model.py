@@ -1,7 +1,7 @@
 from database.db_mysql import MySqlConnector
 from database.db_model import DBModel
+from model.produtos_model.produtos_model import inserir_atividade
 
-# Adicione esta constante no início do arquivo
 VERIFICAR_NOTIFICACOES_ESTOQUE = """
 SELECT 
     p.ID_PRODUTO,
@@ -54,6 +54,12 @@ def get_notificacoes_estoque_controller(user_id, limite_baixo=10, dias_validade=
                     "message": f"Produto {produto['NOME_PRODUTO']} está com estoque baixo ({produto['QTDE_ESTOQUE']} unidades)",
                     "type": "baixo-estoque"
                 })
+                
+                inserir_atividade(
+                    tipo="Alerta",
+                    descricao=f"Produto '{produto['NOME_PRODUTO']}' com estoque baixo ({produto['QTDE_ESTOQUE']} unidades).",
+                    quantidade=produto['QTDE_ESTOQUE']
+                )                
 
         # Processar notificações de validade
         for produto in produtos_prox_validade:
@@ -65,6 +71,12 @@ def get_notificacoes_estoque_controller(user_id, limite_baixo=10, dias_validade=
                     "message": f"Produto {produto['NOME_PRODUTO']} vence em {produto['DIAS_PARA_VENCER']} dias ({produto['VALIDADE_PRODUTO']})",
                     "type": "validade"
                 })
+                
+                inserir_atividade(
+                    tipo="Alerta",
+                    descricao=f"Produto '{produto['NOME_PRODUTO']}' vence em {produto['DIAS_PARA_VENCER']} dias.",
+                    quantidade=0
+                )            
 
         return True, notificacoes
 

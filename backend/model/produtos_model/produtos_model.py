@@ -50,6 +50,14 @@ def CADASTRAR_PRODUTO_ESTOQUE(
                               FORNECEDOR_PRODUTO)
         print("Valores enviados para procedure:", values)
         cursor.execute(command, values) # Executa o comando.
+        
+        from model.produtos_model.produtos_model import inserir_atividade
+        inserir_atividade(
+            tipo="Adição",
+            descricao=f"Produto '{NOME_PRODUTO}' cadastrado no estoque.",
+            quantidade=QTDE_ESTOQUE
+        )
+        
         conn.commit() # Salva as mudanças no banco.
         return True, 'sucesso' # Retorna True e um menssagem de sucesso.
     except Exception as e:
@@ -147,6 +155,14 @@ def ATUALIZAR_PRODUTO(
         )
         cursor.execute(command, values)
         conn.commit()
+        
+        from model.produtos_model.produtos_model import inserir_atividade
+        inserir_atividade(
+            tipo="Atualização",
+            descricao=f"Produto '{p_nome_produto_upd}' atualizado no estoque.",
+            quantidade=p_qtde_estoque_upd if p_qtde_estoque_upd is not None else 0
+        )
+        
         return True, 'sucesso' #retorna True(Verdadeiro) se tiver sucesso ao aplicar atualização
     except Exception as e:
         print(f"Erro ao atualizar produto: {e}")
@@ -230,22 +246,166 @@ def coleta_de_dados_email():
         
 def diminuir_estoque(produto_id: int, quantidade: int):
     """
-    Diminui a quantidade de um produto específico no estoque.
+    Diminui a quantidade de um produto específico no estoque e registra a movimentação.
     """
-    config = DBModel.get_dotenv() # Pega as configurações do banco
-    db = MySqlConnector(config) # Cria o conector MySQL.
-    conn, msg = db.connection() # Conecta ao banco.
+    config = DBModel.get_dotenv()  # Pega as configurações do banco
+    db = MySqlConnector(config)    # Cria o conector MySQL.
+    conn, msg = db.connection()   # Conecta ao banco.
+    
     try:
         cursor = conn.cursor()
-        # Comando SQL simples para diminuir a quantidade no estoque (forma direta de aplicar alterações do CRUD).
-        command = "UPDATE ESTOQUE SET QTDE_ESTOQUE = QTDE_ESTOQUE - %s WHERE ID_ESTOQUE = (SELECT FK_ID_ESTOQUE FROM PRODUTOS WHERE ID_PRODUTO = %s)"
+
+        # Atualiza o estoque
+        command = """
+            UPDATE ESTOQUE 
+            SET QTDE_ESTOQUE = QTDE_ESTOQUE - %s 
+            WHERE ID_ESTOQUE = (
+                SELECT FK_ID_ESTOQUE FROM PRODUTOS WHERE ID_PRODUTO = %s
+            )
+        """
         cursor.execute(command, (quantidade, produto_id))
-        conn.commit() 
-        return True, "Estoque atualizado" # Retorna sucesso.
+        
+        # Registra a movimentação do tipo 'SAIDA'
+        insert_mov = """
+            INSERT INTO MOVIMENTACAO (FK_ID_PRODUTO, QTDE, TIPO_MOVIMENTACAO, DATA_MOVIMENTACAO)
+            VALUES (%s, %s, %s, CURDATE())
+        """
+        cursor.execute(insert_mov, (produto_id, quantidade, "SAIDA"))
+
+        conn.commit()  # Confirma tudo
+
+        return True, "Estoque atualizado e movimentação registrada."
+
     except Exception as e:
-        return False, f"Erro ao atualizar estoque: {e}" # Retorna falha e o erro.
-    finally: 
-        # Garante que o cursor e a conexão sejam fechados.
+        return False, f"Erro ao atualizar estoque: {e}"
+
+    finally:
         cursor.close()
         conn.close()
 
+
+def CONTAR_TOTAL_PRODUTOS():
+    config = DBModel.get_dotenv()
+    db = MySqlConnector(config)
+    conn, msg = db.connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM PRODUTOS")
+        resultado = cursor.fetchone()
+        return True, resultado[0]
+    except Exception as e:
+        return False, str(e)
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def CONTAR_PRODUTOS_BAIXO_ESTOQUE():
+    config = DBModel.get_dotenv()
+    db = MySqlConnector(config)
+    conn, msg = db.connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT COUNT(*) 
+            FROM ESTOQUE E
+            JOIN PRODUTOS P ON E.ID_ESTOQUE = P.ID_PRODUTO
+            WHERE E.QTDE_ESTOQUE < P.QTD_MINIMA_PRODUTO
+        """)
+        resultado = cursor.fetchone()
+        return True, resultado[0]
+    except Exception as e:
+        return False, str(e)
+    finally:
+        cursor.close()
+        conn.close()
+
+def CONTAR_SAIDAS_PRODUTOS():
+    config = DBModel.get_dotenv()
+    db = MySqlConnector(config)
+    conn, msg = db.connection()
+    
+    if not conn:
+        return False, f"Erro na conexão: {msg}"
+    
+    try:
+        cursor = conn.cursor()
+        
+        # Query para somar a quantidade total das saídas
+        query = """
+            SELECT COALESCE(SUM(QTDE), 0) FROM MOVIMENTACAO
+            WHERE TIPO_MOVIMENTACAO = 'Saída'
+        """
+        
+        cursor.execute(query)
+        resultado = cursor.fetchone()
+        total_saida = resultado[0] if resultado else 0
+        
+        return True, total_saida
+    
+    except Exception as e:
+        return False, f"Erro ao contar saídas: {e}"
+    
+    finally:
+        cursor.close()
+        conn.close()
+
+def inserir_atividade(tipo, descricao, quantidade):
+    """
+    Insere uma nova atividade no banco de dados.
+    """
+    config = DBModel.get_dotenv()
+    db = MySqlConnector(config)
+    conn, msg = db.connection()
+    
+    if not conn:
+        return False, f"Erro na conexão: {msg}"
+    
+    try:
+        cursor = conn.cursor()
+        command = "INSERT INTO ATIVIDADES (TIPO, DESCRICAO, QUANTIDADE) VALUES (%s, %s, %s)"
+        values = (tipo, descricao, quantidade)
+        cursor.execute(command, values)
+        conn.commit()
+        return True, "Atividade inserida com sucesso"
+    
+    except Exception as e:
+        return False, f"Erro ao inserir atividade: {e}"
+    
+    finally:
+        cursor.close()
+        conn.close()
+        
+def buscar_atividades_recentes(limit=100):
+    """
+    Busca as atividades mais recentes do banco de dados.
+    """
+    config = DBModel.get_dotenv()
+    db = MySqlConnector(config)
+    conn, msg = db.connection()
+    
+    if not conn:
+        return False, f"Erro na conexão: {msg}"
+    
+    try:
+        cursor = conn.cursor(dictionary=True)
+        command = """
+            SELECT id, tipo, descricao, quantidade AS value, 
+                DATE_FORMAT(data_hora, '%Y-%m-%d %H:%i:%s') AS time 
+            FROM atividades 
+            ORDER BY data_hora DESC 
+            LIMIT 100
+        """
+        cursor.execute(command)
+
+        atividades = cursor.fetchall()
+        return True, atividades
+    
+    except Exception as e:
+        return False, f"Erro ao buscar atividades: {e}"
+    
+    finally:
+        cursor.close()
+        conn.close()
+
+        conn.close()

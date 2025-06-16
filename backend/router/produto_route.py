@@ -294,37 +294,10 @@ def atualizar_estoque(dados: EstoqueCheckout, usuario=Depends(pegar_usuario)):
         # Se a atualização falhar, levanta uma exceção HTTP 400.
         raise HTTPException(status_code=400, detail=msg)
 
-@router.get("/produtos/total")
-def get_total_produtos():
-    """
-    Função: Retorna o número total de produtos no banco de dados.
-    Recebe parâmetros: Nenhum.
-    Detalhes:
-    - Conecta diretamente ao banco de dados para obter a contagem.
-    - Retorna um JSON com o número total ou um erro 500 se algo der errado.
-    """
-    # Importação local para evitar circularidade ou carregar desnecessariamente.
-
-    """
-    Não sei quem criou, mas está aí
-    Contaraios para excluir 
-            |
-            |
-            v
-    """
-    # No entanto, 'conectar' não está definido aqui. Presumindo que seja uma função para conectar ao DB talvez usar:.
-    #from database.db_mysql import connect # Assumindo que 'connect' é uma função exportada de db_mysql.
-    #mas existe um modelo no models para fazer a conexão
-    db = conectar()
-    try:
-        cursor = db.cursor()
-        cursor.execute("SELECT COUNT(*) FROM PRODUTO")  # ou o nome correto da sua tabela
-        total = cursor.fetchone()[0]
-        return {"total": total}
-    except Exception as e:
-        # Se houver erro na contagem, levanta uma exceção HTTP 500.
-        raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        # Garante que o cursor e a conexão sejam fechados.
-        cursor.close()
-        db.close()
+@router.post("/produtos/saida")
+def registrar_saida(produto_id: int, quantidade: int):
+    sucesso, mensagem = diminuir_estoque(produto_id, quantidade)
+    if sucesso:
+        return {"mensagem": mensagem}
+    else:
+        raise HTTPException(status_code=400, detail=mensagem)

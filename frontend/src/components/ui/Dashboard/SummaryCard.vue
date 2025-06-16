@@ -1,8 +1,8 @@
 <template>
-  <div
-    :class="['p-4 rounded-2xl shadow cursor-pointer transition-all hover:shadow-md', color]"
-    @click="$emit('click')"
-  >
+<div
+  :class="['w-full h-full p-4 rounded-2xl shadow cursor-pointer transition-all hover:shadow-md', color]"
+  @click="$emit('click')"
+>
     <div class="flex flex-col items-center text-center">
       <div class="summary-card-icon p-2 rounded-full mb-2 bg-white">
         <component :is="icon" class="h-6 w-6" />

@@ -1,6 +1,6 @@
 <template>
-  <div class="p-6 dashboard-container" :class="{ 'fade-in': mounted }">
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="p-6 dashboard-container" :class="{ 'fade-in': onMounted }">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6 items-stretch">
       <SummaryCard
         title="Total de Produtos"
         :value="dashboardStats.totalProducts"
@@ -18,14 +18,6 @@
         @click="navigateTo('/estoque')"
       />
       <SummaryCard
-        title="Entregas Pendentes"
-        :value="dashboardStats.pendingDeliveries"
-        :icon="TruckIcon"
-        color="bg-orange-100"
-        :change="dashboardStats.pendingDeliveriesTrend"
-        @click="navigateTo('/entregas')"
-      />
-      <SummaryCard
         title="Saída de Produtos"
         :value="dashboardStats.productOutput"
         :icon="ArrowUpIcon"
@@ -39,16 +31,6 @@
       <div class="p-6 border-b border-gray-200">
         <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
           <h2 class="text-lg font-semibold">Atividade Recente</h2>
-          
-          <div class="relative w-full sm:w-96">
-            <SearchIcon class="h-5 w-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              v-model="searchQuery"
-              type="text"
-              placeholder="Buscar por produto, tipo ou data..."
-              class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-300"
-            />
-          </div>
         </div>
 
         <!-- Tabela -->
@@ -73,11 +55,11 @@
             <tbody class="divide-y divide-gray-200">
               <tr v-for="item in paginatedActivities" :key="item.id" class="hover:bg-gray-50">
                 <td class="px-6 py-4 whitespace-nowrap">
-                  <span :class="getActivityTypeClass(item.type)" class="px-2 py-1 text-xs rounded-full">
-                    {{ item.type }}
+                  <span :class="getActivityTypeClass(item.tipo)" class="px-2 py-1 text-xs rounded-full">
+                    {{ item.tipo }}
                   </span>
                 </td>
-                <td class="px-6 py-4">{{ item.description }}</td>
+                <td class="px-6 py-4">{{ item.descricao }}</td>
                 <td class="px-6 py-4">{{ item.value }}</td>
                 <td class="px-6 py-4 text-gray-500">{{ item.time }}</td>
               </tr>
@@ -123,7 +105,7 @@
       </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <ActionCard
         title="Adicionar novo Produto"
         description="Registrar novo item no estoque"
@@ -137,13 +119,6 @@
         color="bg-blue-200"
         :icon="PencilIcon"
         @click="navigateTo('/estoque')"
-      />
-      <ActionCard
-        title="Confirmar Entregas"
-        description="Verificar entregas pendentes"
-        color="bg-green-200"
-        :icon="TruckIcon"
-        @click="navigateTo('/entregas')"
       />
     </div>
   </div>
@@ -173,59 +148,28 @@ const navigateTo = (path) => {
   router.push(path);
 };
 
-// Nova função para buscar os dados do dashboard (pelo menos totalProducts)
-async function fetchDashboardStats() {
-  try {
-    const response = await api.get('/produtos/total');
-    // Atualizando só o totalProducts, sem mexer nos outros
-    dashboardStats.totalProducts = response.data.total || 0;
-  } catch (error) {
-    console.error('Erro ao buscar total de produtos:', error);
-  }
-}
-
-// Chamar a busca ao montar o componente
-onMounted(() => {
-  fetchDashboardStats();
-});
-
 // Pesquisa e paginação
 const searchQuery = ref('');
 const currentPage = ref(1);
 const itemsPerPage = ref(10);
 const itemsPerPageOptions = [10, 20, 50];
 
-//Implementar o backend aqui
-const activities = ref([
-  {
-    id: 1,
-    type: 'Adição',
-    description: 'Margarina',
-    value: '10 unidades',
-    time: '10 minutos atrás'
-  },
-  {
-    id: 2,
-    type: 'Atualização',
-    description: 'Biscoito Oreo',
-    value: '-15 unidades',
-    time: '25 minutos atrás'
-  },
-  {
-    id: 3,
-    type: 'Entrega',
-    description: 'Coca-Cola pedido #447',
-    value: '32 itens',
-    time: '1 hora atrás'
-  },
-  {
-    id: 4,
-    type: 'Alerta',
-    description: 'Ovos de Galinha Caipira',
-    value: '2 unidades restantes',
-    time: '1 dia atrás'
+const activities = ref([]);
+
+const fetchActivities = async () => {
+  try {
+    const response = await api.get("/api/dashboard/stats");
+    console.log(response.data.data.atividades_recentes);
+    activities.value = Array.isArray(response.data?.data?.atividades_recentes)
+      ? response.data.data.atividades_recentes
+      : [];
+  } catch (error) {
+    console.error("Erro ao buscar atividades:", error);
   }
-]);
+};
+
+
+
 
 // Filtro das atividades com base na pesquisa
 const filteredActivities = computed(() => {
@@ -233,12 +177,13 @@ const filteredActivities = computed(() => {
   
   const query = searchQuery.value.toLowerCase();
   return activities.value.filter(item => 
-    item.description.toLowerCase().includes(query) ||
-    item.type.toLowerCase().includes(query) ||
-    item.value.toLowerCase().includes(query) ||
+    item.descricao.toLowerCase().includes(query) || // 
+    item.tipo.toLowerCase().includes(query) ||      //
+    String(item.value).toLowerCase().includes(query) || 
     item.time.toLowerCase().includes(query)
   );
 });
+
 
 const paginatedActivities = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage.value;
@@ -247,16 +192,27 @@ const paginatedActivities = computed(() => {
 });
 
 const totalPages = computed(() => {
-  return Math.ceil(filteredActivities.value.length / itemsPerPage.value);
+  const length = filteredActivities.value?.length || 0;
+  const perPage = itemsPerPage.value || 10;
+
+  console.log('length:', length, 'perPage:', perPage);
+
+  return Math.ceil(length / perPage);
 });
 
-const getActivityTypeClass = (type) => {
+
+const getActivityTypeClass = (tipo) => {
   const classes = {
     'Adição': 'bg-green-100 text-green-800',
     'Atualização': 'bg-blue-100 text-blue-800',
     'Alerta': 'bg-red-100 text-red-800',
     'Entrega': 'bg-purple-100 text-purple-800'
   };
-  return classes[type] || 'bg-gray-100 text-gray-800';
+  return classes[tipo] || 'bg-gray-100 text-gray-800';
 };
+
+onMounted(() => {
+  fetchActivities();
+});
+
 </script>
