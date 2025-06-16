@@ -125,7 +125,7 @@ backend/
 └── utils/                           # Funções auxiliares reutilizáveis
     ├── auth.py                      # Utilitários de autenticação/autorização
     └── pdf_data.py                  # Manipulação de dados de PDF
-
+```
 
 ## 🚀 Instalação do Projeto
 
