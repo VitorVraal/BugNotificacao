@@ -11,64 +11,18 @@ export function useNotifications() {
     return notifications.value.filter((n) => !n.read).length;
   });
 
-  const markAsRead = async (notificationId) => {
-    try {
-      const token = localStorage.getItem('token');
-
-      if (!token) {
-        console.error("Token de autenticação não encontrado");
-        return;
-      }
-
-      await api.post(
-        `/notificacoes/marcar-lida/${notificationId}`,
-        {},
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      );
-
-      notifications.value = notifications.value.map((n) =>
-        n.id === notificationId ? { ...n, read: true } : n
-      );
-    } catch (error) {
-      console.error("Erro ao marcar notificação como lida:", error);
-    }
-  };
-
-  const markAllAsRead = async () => {
-    try {
-      const token = localStorage.getItem('token');
-
-      if (!token) {
-        console.error("Token de autenticação não encontrado");
-        return;
-      }
-
-      const unreadIds = notifications.value
-        .filter(n => !n.read)
-        .map(n => n.id);
-
-      await Promise.all(
-        unreadIds.map(id =>
-          api.post(`/notificacoes/marcar-lida/${id}`, {}, {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          })
-        )
-      );
-
+    const markAllAsRead = () => {
       notifications.value = notifications.value.map((n) => ({
         ...n,
         read: true,
       }));
-    } catch (error) {
-      console.error("Erro ao marcar todas como lidas:", error);
-    }
-  };
+    };
+
+    const markAsRead = (notificationId) => {
+      notifications.value = notifications.value.map((n) =>
+        n.id === notificationId ? { ...n, read: true } : n
+      );
+    };
 
   const clearAll = () => {
     notifications.value = [];

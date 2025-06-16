@@ -1,4 +1,4 @@
-from model.produtos_model.notificacao_model import VERIFICAR_NOTIFICACOES_ESTOQUE, get_notificacoes_estoque_controller, marcar_como_lida_controller
+from model.produtos_model.notificacao_model import VERIFICAR_NOTIFICACOES_ESTOQUE, get_notificacoes_estoque_controller
 from model.produtos_model.produtos_model import (
     CADASTRAR_PRODUTO_ESTOQUE,
     PROCURAR_PRODUTO_NOME,
