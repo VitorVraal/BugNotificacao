@@ -173,7 +173,7 @@ const handleSaveSettings = async () => {
 
 onMounted(() => {
   fetchNotifications();
-  setInterval(fetchNotifications, 10000); // a cada 10s
+  setInterval(fetchNotifications, 86400000); // a cada 1 dia
 });
 
 </script>
