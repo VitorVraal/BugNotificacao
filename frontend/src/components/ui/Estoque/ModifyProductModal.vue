@@ -43,12 +43,17 @@
                 <label class="block text-sm font-medium text-gray-700">
                   Categoria
                 </label>
-                <input
-                  type="text"
+                <select
                   v-model="form.category"
                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
-                />
+                >
+                  <option disabled value="">Selecione uma categoria</option>
+                  <option>Alimentos</option>
+                  <option>Bebidas</option>
+                  <option>Laticínios</option>
+                </select>
               </div>
+
 
               <div class="grid grid-cols-2 gap-4">
                 <div>
