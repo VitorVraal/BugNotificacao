@@ -171,9 +171,37 @@ const handleSaveSettings = async () => {
   }
 }
 
-onMounted(() => {
-  fetchNotifications();
-  setInterval(fetchNotifications, 86400000); // a cada 1 dia
+onMounted(async () => {
+  await fetchNotifications();
+
+  const uniqueNotifications = [];
+  const seenIds = new Set();
+
+  notifications.value.forEach((n) => {
+    if (!seenIds.has(n.id)) {
+      seenIds.add(n.id);
+      uniqueNotifications.push(n);
+    }
+  });
+
+  notifications.value = uniqueNotifications;
+
+  setInterval(async () => {
+    await fetchNotifications();
+
+    const updated = [];
+    const ids = new Set();
+
+    notifications.value.forEach((n) => {
+      if (!ids.has(n.id)) {
+        ids.add(n.id);
+        updated.push(n);
+      }
+    });
+
+    notifications.value = updated;
+  }, 86400000);
 });
+
 
 </script>
