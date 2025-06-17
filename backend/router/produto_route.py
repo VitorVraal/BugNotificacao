@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException, Depends # Ferramentas do FastAPI para criar rotas, lidar com erros HTTP e gerenciar dependências.
+from fastapi import APIRouter, HTTPException, Depends,status # Ferramentas do FastAPI para criar rotas, lidar com erros HTTP e gerenciar dependências.
+from fastapi.responses import JSONResponse # Para retornar respostas JSON explícitas
 from pydantic import BaseModel, Field # Pydantic para criar modelos de dados e validar informações.
 from typing import List, Optional # Para definir tipos como listas ou valores que podem ser vazios.
 from datetime import date # Para lidar com datas.
@@ -14,6 +15,7 @@ from controller.produtos_controller.produtos_controller import (
     delete_produto_estoque_controller,
     list_produto_estoque,
     iniciar_coleta_email_controller,
+    iniciar_coleta_dados_pdf
 )
 from model.produtos_model.produtos_model import diminuir_estoque
 
@@ -259,22 +261,22 @@ def atualizar_produto_router(dados: ProdutoEstoqueUpdate, usuario=Depends(pegar_
         # Captura qualquer erro e retorna um erro HTTP 400.
         raise HTTPException(status_code=400, detail=str(err))
 
-@router.get("/coleta-email", summary="Coleta dados de e-mails do Gmail com anexos PDF")
-def coleta_email_router(usuario=Depends(pegar_usuario)):
-    """
-    Função: Inicia o processo de coleta de dados de e-mails (para, por exemplo, notas fiscais).
-    Recebe parâmetros:
-        usuario (Depends): Dependência de segurança.
-    Detalhes:
-    - Chama `iniciar_coleta_email_controller` para começar a coleta.
-    - Retorna uma mensagem sobre o status da coleta.
-    """
-    try:
-        result = iniciar_coleta_email_controller() # Inicia a coleta de e-mails.
-        return {"message": "Coleta de e-mail concluída", "resultado": str(result)}
-    except Exception as e:
-        # Se houver erro na coleta, levanta uma exceção HTTP 500.
-        raise HTTPException(status_code=500, detail=f"Erro na coleta de e-mails: {e}")
+# @router.get("/coleta-email", summary="Coleta dados de e-mails do Gmail com anexos PDF")
+# def coleta_email_router(usuario=Depends(pegar_usuario)):
+#     """
+#     Função: Inicia o processo de coleta de dados de e-mails (para, por exemplo, notas fiscais).
+#     Recebe parâmetros:
+#         usuario (Depends): Dependência de segurança.
+#     Detalhes:
+#     - Chama `iniciar_coleta_email_controller` para começar a coleta.
+#     - Retorna uma mensagem sobre o status da coleta.
+#     """
+#     try:
+#         result = iniciar_coleta_email_controller() # Inicia a coleta de e-mails.
+#         return {"message": "Coleta de e-mail concluída", "resultado": str(result)}
+#     except Exception as e:
+#         # Se houver erro na coleta, levanta uma exceção HTTP 500.
+#         raise HTTPException(status_code=500, detail=f"Erro na coleta de e-mails: {e}")
     
 @router.post("/estoque/atualizar")
 def atualizar_estoque(dados: EstoqueCheckout, usuario=Depends(pegar_usuario)):
@@ -301,3 +303,77 @@ def registrar_saida(produto_id: int, quantidade: int):
         return {"mensagem": mensagem}
     else:
         raise HTTPException(status_code=400, detail=mensagem)
+    
+
+
+@router.get("/coletar-emails", summary="Inicia a coleta e download de anexos de e-mails.", status_code=status.HTTP_200_OK)
+async def coletar_emails_router(usuario=Depends(pegar_usuario)): # Protegido por dependência de usuário
+    """
+    Endpoint para iniciar o processo de coleta e download de anexos de e-mails.
+    Requer autenticação de usuário.
+    """
+    print("Requisição recebida para /coletar-emails")
+    try:
+        # Chama a função síncrona do controller.
+        # FastAPI a executará em um thread pool.
+        success, count = iniciar_coleta_email_controller() 
+        
+        if success:
+            return JSONResponse(content={
+                "status": "sucesso",
+                "mensagem": f"{count} PDFs baixados com sucesso (se aplicável).",
+                "pdfs_baixados": count,
+                "usuario_autenticado": usuario.get('email', 'N/A') # Exemplo de retorno do usuário
+            }, status_code=status.HTTP_200_OK)
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Falha na coleta de e-mails. Verifique os logs do servidor para mais detalhes."
+            )
+    except Exception as e:
+        print(f"Erro no endpoint /coletar-emails: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Ocorreu um erro interno inesperado: {str(e)}"
+        )
+
+
+@router.post("/processar-pdfs", summary="Inicia o processo de extração e cadastro de dados dos PDFs baixados.", status_code=status.HTTP_200_OK)
+async def processar_pdfs_router(usuario=Depends(pegar_usuario)): # Protegido por dependência de usuário
+    """
+    Endpoint para iniciar o processo de leitura de arquivos PDF baixados,
+    extração de dados de produtos e tentativa de cadastro no banco de dados.
+    
+    Requer autenticação de usuário.
+    """
+    print("Requisição recebida para /processar-pdfs")
+    try:
+        # Chama a função síncrona do controller.
+        # FastAPI a executará em um thread pool.
+        all_processed_data = iniciar_coleta_dados_pdf() 
+        
+        if all_processed_data is not None: # Verifica se não houve erro grave antes de retornar []
+            if len(all_processed_data) > 0:
+                return JSONResponse(content={
+                    "status": "sucesso",
+                    "mensagem": f"{len(all_processed_data)} PDFs processados. Verifique os logs para status de cadastro.",
+                    "detalhes_processamento": all_processed_data, # Pode retornar os dados extraídos
+                    "usuario_autenticado": usuario.get('email', 'N/A')
+                }, status_code=status.HTTP_200_OK)
+            else:
+                return JSONResponse(content={
+                    "status": "info",
+                    "mensagem": "Nenhum PDF encontrado no diretório ou nenhum dado extraído para processamento."
+                }, status_code=status.HTTP_200_OK)
+        else:
+             raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Erro interno ao iniciar o processamento de PDFs. Verifique os logs."
+            )
+
+    except Exception as e:
+        print(f"Erro no endpoint /processar-pdfs: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Ocorreu um erro interno inesperado: {str(e)}"
+        )
