@@ -85,38 +85,3 @@ def get_notificacoes_estoque_controller(user_id, limite_baixo=10, dias_validade=
     finally:
         if 'connection' in locals() and connection:
             connection.close()
-
-def marcar_como_lida_controller(user_id, notificacao_id, produto_id):
-    try:
-        config = DBModel.get_dotenv()
-        db = MySqlConnector(config)
-        connection, msg = db.connection()
-
-        if not connection:
-            return False, f"Erro na conexão com o banco: {msg}"
-
-        cursor = connection.cursor()
-
-        # Verificar se o produto existe
-        cursor.execute("SELECT ID_PRODUTO FROM PRODUTOS WHERE ID_PRODUTO = %s", (produto_id,))
-        if not cursor.fetchone():
-            return False, "Produto não encontrado"
-
-        # Verificar se a notificação é válida
-        if not (notificacao_id.startswith("estoque_") or notificacao_id.startswith("validade_")):
-            return False, "Tipo de notificação inválido"
-
-        # Marcar como lida
-        cursor.execute(
-            "INSERT INTO NOTIFICACOES_LIDAS (ID_NOTIFICACAO, ID_USUARIO) VALUES (%s, %s) "
-            "ON DUPLICATE KEY UPDATE DATA_LEITURA = CURRENT_TIMESTAMP",
-            (notificacao_id, user_id)
-        )
-        connection.commit()
-        return True, "Notificação marcada como lida"
-
-    except Exception as e:
-        return False, str(e)
-    finally:
-        if 'connection' in locals() and connection:
-            connection.close()

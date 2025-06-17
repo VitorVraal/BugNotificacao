@@ -58,15 +58,15 @@ app.include_router(notificacao_router, tags=["Notificações"])
 app.include_router(dashboard_router, tags=["Dashboard"])
 
 # Tarefa periódica para verificar e-mails
-async def tarefa_periodica_email():
-    while True:
-        print("⌛ Verificando e-mails automaticamente...")
-        try:
-            iniciar_coleta_email_controller()
-            print("✅ Coleta de e-mails concluída.")
-        except Exception as e:
-            print(f"❌ Erro ao coletar e-mails automaticamente: {e}")
-        await asyncio.sleep(1800)  # Executa a cada 30 minutos
+# async def tarefa_periodica_email():
+#     while True:
+#         print("⌛ Verificando e-mails automaticamente...")
+#         try:
+#             iniciar_coleta_email_controller()
+#             print("✅ Coleta de e-mails concluída.")
+#         except Exception as e:
+#             print(f"❌ Erro ao coletar e-mails automaticamente: {e}")
+#         await asyncio.sleep(1800)  # Executa a cada 30 minutos
 
 # Execução direta
 if __name__ == "__main__":

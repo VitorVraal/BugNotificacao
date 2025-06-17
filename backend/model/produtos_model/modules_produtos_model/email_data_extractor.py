@@ -11,8 +11,10 @@ from model.produtos_model.modules_produtos_model.get_env_email import get_dotenv
 
 def baixar_anexos_pdf(msg, pasta_destino):
     #não é o bora bill! ok? coloquem outras palavras que sinalizem uma nf       
+    arquivos_baixados_count = 0
     termos_de_busca = ["nota fiscal", 'nf', 'fatura', 'recibo', 'comprovante', 'invoice', 'bill', 'payment']
     search_padrao = re.compile(r'\b(?:' + '|'.join(termos_de_busca) + r')\b', re.IGNORECASE)
+
     for part in msg.walk():
         if part.get_content_maintype()=='application' and part.get_content_subtype() == 'pdf':
             nome_arquivo = part.get_filename()
@@ -23,13 +25,15 @@ def baixar_anexos_pdf(msg, pasta_destino):
                         with open(caminhi_completo, 'wb') as f:
                             f.write(part.get_payload(decode=True))
                         print(f"Anexo PDF: '{nome_arquivo}'\n (Nota Fiscal/Similar) salvo em: '{pasta_destino}'")
+                        arquivos_baixados_count += 1
+
                     except Exception as err:
                         print(f'erro ao salvar anexo: {nome_arquivo}.\nErro: {err}')
                 else:
                     print(f"anexo PDF '{nome_arquivo}' ignorado (não contém termos de Nota Fiscal/Similar).")
             else:
                 print("Anexo PDF encontrado, mas sem nome de arquivo.")
-
+    return arquivos_baixados_count # Retorna a quantidade de arquivos baixados
 
 ######
 
@@ -49,7 +53,6 @@ def read_email_data():
             
 
             print(f"\nSeus {min(config_data['qtde_email'], len(lista_ids))} e-mails mais recentes: ")
-
             for i, id_email in enumerate(lista_ids[:config_data["qtde_email"]]):
                 status, dados_msg = mail.fetch(id_email, "(RFC822)")
                 if status == "OK":
@@ -95,12 +98,14 @@ def read_email_data():
 
 
                 #parte para acionar função de baixar_pdf
-                baixar_anexos_pdf(msg, config_data["local_annex"])
+                qtd_baixados  = baixar_anexos_pdf(msg, config_data["local_annex"])
                 print("-" * 50)
 
             mail.logout()       
             print(f"\nDesconectado do servidor IMAP.")
-            return True
+            return qtd_baixados
+        
+
         except imaplib.IMAP4.error as e:
             print(f"\nERRO DE ACESSO OU LOGIN XD: {e}")
             print("Verifique seu e-mail, a SENHA DE APLICATIVO e se o IMAP está ativado no Gmail.")
@@ -114,10 +119,4 @@ def read_email_data():
     else:
         print(f'fracasso ao coletar dados do arquivo env')
         return False
-# read_email_data()
 
-
-
-   # config = DBModel.get_dotenv()
-
-    # if not os.path.exists():

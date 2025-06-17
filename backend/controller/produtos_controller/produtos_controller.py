@@ -1,11 +1,12 @@
-from model.produtos_model.notificacao_model import VERIFICAR_NOTIFICACOES_ESTOQUE, get_notificacoes_estoque_controller, marcar_como_lida_controller
+from model.produtos_model.notificacao_model import VERIFICAR_NOTIFICACOES_ESTOQUE, get_notificacoes_estoque_controller
 from model.produtos_model.produtos_model import (
     CADASTRAR_PRODUTO_ESTOQUE,
     PROCURAR_PRODUTO_NOME,
     ATUALIZAR_PRODUTO,
     EXCLUIR_PRODUTO_GERAL,
     LISTAR_PRODUTOS,
-    coleta_de_dados_email
+    coleta_de_dados_email,
+    data_pdf_extractor
 )
 #importa funções do arquivo produtos_model (model->produtos_model->produtos_model)
 
@@ -133,12 +134,30 @@ def list_produto_estoque():
     """
     return LISTAR_PRODUTOS() 
 
+# def iniciar_coleta_email_controller():
+#     """
+#     Controla o início do processo de coleta de dados de e-mails (ex: notas fiscais).
+#     Chama a função que lida com a lógica de leitura de e-mails e PDFs.
+#     """
+#     return coleta_de_dados_email() # Delega a coleta para a função principal.
+
 def iniciar_coleta_email_controller():
     """
     Controla o início do processo de coleta de dados de e-mails (ex: notas fiscais).
     Chama a função que lida com a lógica de leitura de e-mails e PDFs.
     """
-    return coleta_de_dados_email() # Delega a coleta para a função principal.
+    validation, cout = coleta_de_dados_email() # Delega a coleta para a função principal.
+    return validation, cout
 
 
+# iniciar_coleta_email_controller()
+
+
+def iniciar_coleta_dados_pdf():
+    """
+    Controla o início do processo de coleta de dados de e-mails (ex: notas fiscais).
+    Chama a função que lida com a lógica de leitura de e-mails e PDFs.
+    """
+    return data_pdf_extractor() 
+# print(iniciar_coleta_dados_pdf())
 

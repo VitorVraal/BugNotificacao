@@ -38,3 +38,5 @@ def get_dotenv_email():
         return None, f'Erro ao carregar configurações de e-mail: {e}'
     except Exception as e: # Captura qualquer outra exceção inesperada
         return None, f'Ocorreu um erro inesperado: {e}'
+    
+    

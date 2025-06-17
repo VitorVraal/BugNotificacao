@@ -7,6 +7,8 @@ from typing import Optional, Protocol  # Para indicar que um valor pode ser opci
 # Importa funções para ler PDFs e e-mails (extrair dados de notas fiscais).
 from model.produtos_model.modules_produtos_model.pdf_reader import read_pdf
 from model.produtos_model.modules_produtos_model.email_data_extractor import read_email_data, baixar_anexos_pdf
+from model.produtos_model.modules_produtos_model.pdf_reader import read_pdf, formatar_validade_para_mysql
+
 
 def CADASTRAR_PRODUTO_ESTOQUE(
     NOME_PRODUTO, 
@@ -227,23 +229,98 @@ def EXCLUIR_PRODUTO_GERAL(ID_ESTOQUE):
 
 def coleta_de_dados_email():
     """
-    Tenta ler dados de e-mails e anexos PDF (provavelmente notas fiscais)
+    Tenta ler dados de e-mails e anexos PDF (notas fiscais)
     e, se conseguir, cadastra as informações do produto no estoque.
     """
     try:
-        if read_email_data():
-            # Se ler, extrai informações do PDF (emitente, produto, preço, NF, etc.).
-            emitente, nome_produto, tipo_produto, descricao_produto, qtde_produto, preco_produto_float, numero_nota = read_pdf()
-            try:
-                # Tenta cadastrar o produto usando as informações extraídas.
-                CADASTRAR_PRODUTO_ESTOQUE(nome_produto, preco_produto_float, descricao_produto, tipo_produto, qtde_produto, numero_nota )
-            except Error as err:
-                print(f'{err}')
-        else:
-            print('n')
+        res=read_email_data()
+        return True, res 
     except:
-        print("erro ao buscar no email")
+        print("Erro no processo de coleta de dados do email")
+        return False
+
+
+def data_pdf_extractor():
+    processed_count = 0 #Contador para produtos cadastrados com sucesso
+    failed_count = 0   #Contador para produtos que falharam no cadastro
+
+    try:
+        # Chama read_pdf do arquivo pdf_reader.py
+        # E espera que ela retorne uma lista de dicionários.
+        all_products_data = read_pdf()
+
+        if all_products_data:
+            print(f"\n{len(all_products_data)} PDF(s) processado(s) e dados extraídos com sucesso!")
+            
+            #Loop para iterar sobre cada dicionário de dados extraídos
+            for produto_data in all_products_data:
+                print(f"\nTentando cadastrar produto do PDF: {produto_data.get('nome_arquivo_pdf', 'N/A')}")
+                
+                #Formata a validade para o formato MySQL antes de passar
+                validade_para_mysql = formatar_validade_para_mysql(produto_data.get('validade_produto'))
+
+                # Chama a função de cadastro no banco de dados
+                # Mapeando os campos do dicionário para os parâmetros da função CADASTRAR_PRODUTO_ESTOQUE
+                success, message = CADASTRAR_PRODUTO_ESTOQUE(
+                    NOME_PRODUTO=produto_data.get('nome_produto'),
+                    CATEGORIA_ESTOQUE=produto_data.get('categoria'),
+                    DESC_PRODUTO=produto_data.get('descricao_produto'),
+                    QTDE_ESTOQUE=produto_data.get('qtde_produto'),
+                    PRECO_PRODUTO=produto_data.get('preco_produto_float'),
+                    QTD_MINIMA_PRODUTO=produto_data.get('qtd_minima_produto'),
+                    VALIDADE_PRODUTO=validade_para_mysql,
+                    NUMERO_NF_PRODUTO=produto_data.get('numero_nota_fiscal'),
+                    FORNECEDOR_PRODUTO=produto_data.get('emitente') 
+                )
+
+                if success:
+                    print(f"Produto '{produto_data.get('nome_produto')}' do PDF '{produto_data.get('nome_arquivo_pdf')}' cadastrado com sucesso! Mensagem: {message}")
+                    processed_count += 1
+                else:
+                    print(f"Falha ao cadastrar produto '{produto_data.get('nome_produto')}' do PDF '{produto_data.get('nome_arquivo_pdf')}'. Mensagem: {message}")
+                    failed_count += 1
+                print("-" * 50) # Separador para cada produto
+
+            print(f"\n--- Resumo do Cadastro ---")
+            print(f"Total de PDFs processados: {len(all_products_data)}")
+            print(f"Produtos cadastrados com sucesso: {processed_count}")
+            print(f"Produtos com falha no cadastro: {failed_count}")
+
+            # Retorna a LISTA COMPLETA de dicionários, salva tempo
+            return all_products_data
+        else:
+            print(f'Nenhum dado de produto encontrado nos PDFs disponíveis ou diretório vazio. Nenhum cadastro realizado.')
+            return [] # Retorna uma lista vazia se nada for encontrado
+
+    except Exception as e:
+        print(f'Erro geral na execução de data_pdf_extractor: {e}')
+        return [] # Retorna uma lista vazia em caso de erro
+
+# print(data_pdf_extractor())
+
+"""
+CADASTRAR_PRODUTO_ESTOQUE(
+    NOME_PRODUTO, 
+    CATEGORIA_ESTOQUE, 
+    DESC_PRODUTO, 
+    QTDE_ESTOQUE, 
+    PRECO_PRODUTO,
+    QTD_MINIMA_PRODUTO, 
+    VALIDADE_PRODUTO, 
+    NUMERO_NF_PRODUTO, 
+    FORNECEDOR_PRODUTO
+    ):
+
+    command = "CALL CADASTRAR_PRODUTO_ESTOQUE(%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+
+        #valores a serem aplicados nos locais "%s" ao chamar a procedure
+        values = (NOME_PRODUTO, CATEGORIA_ESTOQUE, DESC_PRODUTO, QTDE_ESTOQUE, 
+                              PRECO_PRODUTO, QTD_MINIMA_PRODUTO, VALIDADE_PRODUTO, NUMERO_NF_PRODUTO, 
+                              FORNECEDOR_PRODUTO)
+"""
         
+
+
 def diminuir_estoque(produto_id: int, quantidade: int):
     """
     Diminui a quantidade de um produto específico no estoque e registra a movimentação.
